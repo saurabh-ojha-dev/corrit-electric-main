@@ -9,7 +9,7 @@ const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
     // If no env var is set in production, you can hardcode your Render URL here as fallback
     // Replace this with your actual Render backend URL
-    const renderUrl = 'https://your-render-app-name.onrender.com';
+    const renderUrl = 'https://corrit-electric-main.onrender.com';
     console.warn('NEXT_PUBLIC_API_URL not found, using hardcoded Render URL:', renderUrl);
     return renderUrl;
   }

@@ -29,6 +29,15 @@ mongoose.connect(process.env.MONGODB_URI)
     process.exit(1);
   });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Server running fine',
+    status: 'success',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bikes', bikeRoutes);
