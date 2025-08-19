@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { API_ENDPOINTS, apiClient } from '@/utils/api'
 
 interface AdminProfile {
   _id: string
@@ -28,11 +28,7 @@ export function useAdminProfile() {
         return
       }
 
-      const response = await axios.get('/api/auth/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
+      const response = await apiClient.get(API_ENDPOINTS.AUTH.PROFILE)
 
       const adminData = response.data.admin
       setProfile(adminData)

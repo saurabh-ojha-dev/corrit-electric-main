@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { Shield, User, Lock, Eye, EyeOff, Mail, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
-import axios from 'axios'
+import { API_ENDPOINTS, apiClient } from '@/utils/api'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -33,7 +33,7 @@ export default function AdminRegister() {
 
     setIsLoading(true)
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
         username: data.username,
         email: data.email,
         password: data.password

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { Shield, User, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
-import axios from 'axios'
+import { API_ENDPOINTS, apiClient } from '@/utils/api'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -24,7 +24,7 @@ export default function AdminLogin() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
     try {
-      const response = await axios.post('/api/auth/login', data)
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, data)
       if (response.data.token) {
         localStorage.setItem('adminToken', response.data.token)
         toast.success('Login successful!')
