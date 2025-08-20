@@ -133,7 +133,7 @@ const RiderOnboarding = () => {
                                         </svg>
                                     </div>
                                     <div className="relative">
-                                        <select className="appearance-none bg-white border border-gray-300 rounded-xl px-3 lg:px-4 py-1.5 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[120px] lg:min-w-[140px] text-xs lg:text-sm font-medium">
+                                        <select title='status' className="appearance-none bg-white border border-gray-300 rounded-xl px-3 lg:px-4 py-1.5 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[120px] lg:min-w-[140px] text-xs lg:text-sm font-medium">
                                             <option value="" className="py-2 px-3">All Status</option>
                                             <option value="pending" className="py-2 px-3">🟡 Pending Verification</option>
                                             <option value="approved" className="py-2 px-3">🟢 Approved</option>
@@ -244,7 +244,7 @@ const RiderOnboarding = () => {
                         </div>
 
                         {/* Pagination */}
-                        <Pagination />
+                        {/* <Pagination /> */}
                     </div>
                 </main>
             </div>

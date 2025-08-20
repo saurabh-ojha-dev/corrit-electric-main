@@ -135,7 +135,7 @@ const Payments = () => {
                         </div>
 
                         {/* Pagination */}
-                        <Pagination />
+                        {/* <Pagination /> */}
                     </div>
 
                     <PaymentHistory />
