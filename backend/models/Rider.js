@@ -1,0 +1,199 @@
+const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
+
+const riderSchema = new mongoose.Schema({
+  riderId: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return /^RID-[A-Z]{3}\d{2}-\d{4}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid Rider ID format!`
+    }
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: props => `${props.value} is not a valid email!`
+    }
+  },
+  phone: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return /^(0?[6-9]\d{9})$/.test(v);
+      },
+      message: props => `${props.value} is not a valid Indian phone number!`
+    }
+  },
+  upiId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  address: {
+    street: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    city: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    state: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    pincode: {
+      type: String,
+      required: true,
+      validate: {
+        validator: function(v) {
+          return /^[1-9][0-9]{5}$/.test(v);
+        },
+        message: props => `${props.value} is not a valid pincode!`
+      }
+    }
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other'],
+    required: true
+  },
+  weeklyRentAmount: {
+    type: Number,
+    required: true,
+    min: 1,
+    default: 500
+  },
+  mandateStatus: {
+    type: String,
+    enum: ['pending', 'active', 'failed', 'suspended'],
+    default: 'pending'
+  },
+  documents: {
+    aadhaar: {
+      type: String,
+      required: false
+    },
+    pan: {
+      type: String,
+      required: false
+    },
+    addressProof: {
+      type: String,
+      required: false
+    },
+    bankProof: {
+      type: String,
+      required: false
+    },
+    batteryCard: {
+      type: String,
+      required: false // Optional document
+    },
+    picture: {
+      type: String,
+      required: false
+    }
+  },
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  assignedAdmin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    required: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLocationUpdate: {
+    type: Date
+  },
+  mandateCreatedAt: {
+    type: Date
+  },
+  mandateExpiryDate: {
+    type: Date
+  }
+}, {
+  timestamps: true
+});
+
+// Indexes for better query performance
+riderSchema.index({ riderId: 1 });
+riderSchema.index({ email: 1 });
+riderSchema.index({ phone: 1 });
+riderSchema.index({ upiId: 1 });
+riderSchema.index({ mandateStatus: 1 });
+riderSchema.index({ verificationStatus: 1 });
+riderSchema.index({ assignedAdmin: 1 });
+riderSchema.index({ isActive: 1 });
+
+// Virtual for full address
+riderSchema.virtual('fullAddress').get(function() {
+  return `${this.address.street}, ${this.address.city}, ${this.address.state} - ${this.address.pincode}`;
+});
+
+// Method to generate next Rider ID
+riderSchema.statics.generateRiderId = async function(cityCode) {
+  const year = new Date().getFullYear().toString().slice(-2);
+  const pattern = `RID-${cityCode}${year}-`;
+  
+  const lastRider = await this.findOne({
+    riderId: { $regex: `^${pattern}` }
+  }).sort({ riderId: -1 });
+  
+  let sequence = 1;
+  if (lastRider) {
+    const lastSequence = parseInt(lastRider.riderId.split('-')[2]);
+    sequence = lastSequence + 1;
+  }
+  
+  return `${pattern}${sequence.toString().padStart(4, '0')}`;
+};
+
+// Method to check if all required documents are uploaded
+riderSchema.methods.hasAllDocuments = function() {
+  const requiredDocs = ['aadhaar', 'pan', 'addressProof', 'bankProof', 'picture'];
+  return requiredDocs.every(doc => this.documents[doc]);
+};
+
+// Method to get document completion percentage
+riderSchema.methods.getDocumentCompletion = function() {
+  const requiredDocs = ['aadhaar', 'pan', 'addressProof', 'bankProof', 'picture'];
+  const optionalDocs = ['batteryCard'];
+  const allDocs = [...requiredDocs, ...optionalDocs];
+  
+  const uploadedDocs = allDocs.filter(doc => this.documents[doc]).length;
+  return Math.round((uploadedDocs / allDocs.length) * 100);
+};
+
+// Apply pagination plugin
+riderSchema.plugin(mongoosePaginate);
+
+module.exports = mongoose.model('Rider', riderSchema);

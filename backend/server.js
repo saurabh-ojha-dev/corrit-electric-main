@@ -6,8 +6,13 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
-const bikeRoutes = require('./routes/bikes');
-const rentalRoutes = require('./routes/rentals');
+const riderRoutes = require('./routes/riders');
+const paymentRoutes = require('./routes/payments');
+const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notifications');
+const trackingRoutes = require('./routes/tracking');
+const webhookRoutes = require('./routes/webhooks');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,8 +45,13 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/bikes', bikeRoutes);
-app.use('/api/rentals', rentalRoutes);
+app.use('/api/riders', riderRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/tracking', trackingRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

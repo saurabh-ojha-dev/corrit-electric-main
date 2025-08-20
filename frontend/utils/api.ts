@@ -1,21 +1,17 @@
 // API configuration utility
 const getApiBaseUrl = () => {
-  // Check for environment variable first
+  // Force localhost for development regardless of env var
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:5000';
+  }
+  
+  // Check for environment variable for production
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   
-  // Check if we're in production on Vercel
-  if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
-    // If no env var is set in production, you can hardcode your Render URL here as fallback
-    // Replace this with your actual Render backend URL
-    const renderUrl = 'https://corrit-electric-main.onrender.com';
-    console.warn('NEXT_PUBLIC_API_URL not found, using hardcoded Render URL:', renderUrl);
-    return renderUrl;
-  }
-  
-  // Development fallback
-  return 'http://localhost:5000';
+  // Production fallback
+  return 'https://corrit-electric-main.onrender.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -46,6 +42,17 @@ export const API_ENDPOINTS = {
     CREATE: `${API_BASE_URL}/api/rentals`,
     UPDATE: (id: string) => `${API_BASE_URL}/api/rentals/${id}`,
     DELETE: (id: string) => `${API_BASE_URL}/api/rentals/${id}`,
+  },
+  RIDERS: {
+    LIST: `${API_BASE_URL}/api/riders`,
+    CREATE: `${API_BASE_URL}/api/riders`,
+    GET: (id: string) => `${API_BASE_URL}/api/riders/${id}`,
+    UPDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}`,
+    DELETE: (id: string) => `${API_BASE_URL}/api/riders/${id}`,
+    VERIFY: (id: string) => `${API_BASE_URL}/api/riders/${id}/verify`,
+    MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate`,
+    DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
+    STATS: `${API_BASE_URL}/api/riders/stats/overview`,
   },
 }
 
