@@ -82,7 +82,7 @@ router.get('/', auth, async (req, res) => {
 // @route   POST /api/riders
 // @desc    Create new rider
 // @access  Private
-router.post('/', [auth, roleCheck(['super_admin', 'admin']), validateRider], async (req, res) => {
+router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], async (req, res) => {
   try {
     // Add debugging logs
     console.log('POST /api/riders - Request received');

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
-import { Shield, User, Lock, Eye, EyeOff, Mail, ArrowRight } from 'lucide-react'
+import { Shield, User, Lock, Eye, EyeOff, Mail, ArrowRight, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { API_ENDPOINTS, apiClient } from '@/utils/api'
 import Image from 'next/image'
@@ -12,6 +12,7 @@ import Link from 'next/link'
 interface RegisterForm {
   username: string
   email: string
+  phone: string
   password: string
   confirmPassword: string
 }
@@ -36,6 +37,7 @@ export default function AdminRegister() {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
         username: data.username,
         email: data.email,
+        phone: data.phone,
         password: data.password
       })
       
@@ -138,6 +140,34 @@ export default function AdminRegister() {
               </div>
               {errors.email && (
                 <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Phone Number Field */}
+            <div>
+              <label htmlFor="phone" className="block text-sm sm:text-base font-normal text-[#00000099] mb-2">
+                Phone Number
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-[#191C1F]" />
+                </div>
+                <div className="absolute inset-y-0 left-10 sm:left-12 flex items-center pointer-events-none">
+                  <div className="w-px h-5 sm:h-6 bg-gray-300"></div>
+                </div>
+                <input
+                  {...register('phone', { 
+                    required: 'Phone number is required',
+                    pattern: { value: /^[0-9]{10,15}$/, message: 'Please enter a valid phone number' }
+                  })}
+                  type="tel"
+                  id="phone"
+                  placeholder="Enter phone number"
+                  className="block placeholder:text-[#00000099] w-full pl-12 sm:pl-16 pr-3 py-2.5 sm:py-3 border border-[#0000001A] rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm sm:text-base"
+                />
+              </div>
+              {errors.phone && (
+                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.phone.message}</p>
               )}
             </div>
 

@@ -284,7 +284,7 @@ corrit_electric/
   name: String,
   email: String,
   password: String (hashed),
-  role: String (enum: ['super_admin', 'admin', 'team_lead', 'support']),
+  role: String (enum: ['Superadmin', 'admin', 'team_lead', 'support']),
   phone: String,
   assignedRegion: String,
   isActive: Boolean,

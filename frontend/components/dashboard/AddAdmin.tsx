@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Mail, Phone, User, X, Shield, MapPin, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import { apiClient, API_ENDPOINTS } from '@/utils/api'
 
 interface AddAdminProps {
     isModalOpen: boolean;
@@ -11,12 +12,11 @@ interface AddAdminProps {
 
 const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
     const [formData, setFormData] = useState({
-        fullName: '',
+        username: '',
         email: '',
-        role: 'Admin',
-        region: 'Bangalore Zone',
-        password: 'ABCDEFGH',
-        phoneNumber: ''
+        phone: '',
+        password: '',
+        role: 'admin'
     });
 
     const modalRef = useRef<HTMLDivElement>(null);
@@ -38,39 +38,72 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
         };
     }, [isModalOpen]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        
+        // Special handling for phone number validation
+        if (name === 'phone') {
+            // Only allow digits and limit to 10 characters
+            const phoneValue = value.replace(/\D/g, '').slice(0, 10);
+            setFormData(prev => ({
+                ...prev,
+                [name]: phoneValue
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Implement API call to create admin
-        console.log('Form submitted:', formData);
-        toast.success('Admin created successfully!');
-        setIsModalOpen(false);
-        setFormData({
-            fullName: '',
-            email: '',
-            role: 'Admin',
-            region: 'Bangalore Zone',
-            password: 'ABCDEFGH',
-            phoneNumber: ''
-        });
+        
+        // Validate phone number length
+        if (formData.phone.length !== 10) {
+            toast.error('Phone number must be exactly 10 digits');
+            return;
+        }
+        
+        // Debug: Log the form data being sent
+        console.log('Form data being sent:', formData);
+        
+        try {
+            // Send form data directly as it matches the backend structure
+            const response = await apiClient.post(API_ENDPOINTS.ADMIN.CREATE, formData);
+
+            if (response.data.success) {
+                toast.success('Admin created successfully!');
+                setIsModalOpen(false);
+                setFormData({
+                    username: '',
+                    email: '',
+                    phone: '',
+                    password: '',
+                    role: 'admin'
+                });
+                
+                // Trigger a refresh of the admin list
+                window.location.reload();
+            } else {
+                toast.error(response.data.message || 'Failed to create admin');
+            }
+        } catch (error: any) {
+            console.error('Error creating admin:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to create admin';
+            toast.error(errorMessage);
+        }
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
         setFormData({
-            fullName: '',
+            username: '',
             email: '',
-            role: 'Admin',
-            region: 'Bangalore Zone',
-            password: 'ABCDEFGH',
-            phoneNumber: ''
+            phone: '',
+            password: '',
+            role: 'admin'
         });
     };
 
@@ -105,15 +138,15 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
                     {/* Input Fields */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
                         <div>
-                            <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">Full Name</label>
+                            <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">Username</label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
                                 <input
                                     type="text"
-                                    name="fullName"
-                                    value={formData.fullName}
+                                    name="username"
+                                    value={formData.username}
                                     onChange={handleInputChange}
-                                    placeholder="Enter full name"
+                                    placeholder="Enter username"
                                     className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
                                     required
                                 />
@@ -138,14 +171,16 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
                             <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">Role</label>
                             <div className="relative">
                                 <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
-                                <input
-                                    type="text"
+                                <select
                                     name="role"
                                     value={formData.role}
                                     onChange={handleInputChange}
-                                    className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
+                                    className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base bg-white"
                                     required
-                                />
+                                >
+                                    <option value="admin">Admin</option>
+                                    <option value="Superadmin">Super Admin</option>
+                                </select>
                             </div>
                         </div>
                         <div>
@@ -154,31 +189,22 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
                                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" fill='black' />
                                 <input
                                     type="tel"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber}
+                                    name="phone"
+                                    value={formData.phone}
                                     onChange={handleInputChange}
-                                    placeholder="Enter Phone number"
+                                    placeholder="Enter 10-digit phone number"
                                     className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
                                     required
+                                    pattern="[0-9]{10}"
+                                    title="Please enter exactly 10 digits"
                                 />
                             </div>
+                            {formData.phone.length > 0 && formData.phone.length !== 10 && (
+                                <p className="text-red-500 text-xs mt-1">Phone number must be exactly 10 digits</p>
+                            )}
                         </div>
                         <div>
-                            <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">Assign Region</label>
-                            <div className="relative">
-                                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
-                                <input
-                                    type="text"
-                                    name="region"
-                                    value={formData.region}
-                                    onChange={handleInputChange}
-                                    className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">Password Setup</label>
+                            <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">Password</label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
                                 <input
@@ -186,12 +212,12 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
                                     name="password"
                                     value={formData.password}
                                     onChange={handleInputChange}
+                                    placeholder="Enter password"
                                     className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
                                     required
                                 />
                             </div>
                         </div>
-                        
                     </div>
 
                     {/* What happens next section */}

@@ -7,6 +7,7 @@ interface AdminProfile {
   _id: string
   username: string
   email: string
+  phone: string
   role: string
   isActive: boolean
   lastLogin: string

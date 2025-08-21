@@ -6,11 +6,46 @@ import toast from 'react-hot-toast'
 import Image from 'next/image'
 import AdminManagementUserDetails from './AdminManagementUserDetails'
 import EditAdmin from './EditAdmin'
+import { useAdminProfile } from '@/hooks/useAdminProfile'
+import { API_ENDPOINTS, apiClient } from '@/utils/api'
 
 const AdminManagement = () => {
+  interface AdminData {
+    _id: string;
+    username: string;
+    email: string;
+    phone: string;
+    role: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }
+
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const [editIsModalOpen, setEditIsModalOpen] = useState(false);
+  const [adminData, setAdminData] = useState<AdminData | null>(null);
+  const { profile: currentAdmin } = useAdminProfile();
+
+  const fetchSuperAdminData = async () => {
+    try {
+      if (!currentAdmin?._id) {
+        toast.error('Admin ID not found');
+        return;
+      }
+
+      const response = await apiClient.get(API_ENDPOINTS.ADMIN.GET(currentAdmin._id));
+
+      if (response.data.success) {
+        setAdminData(response.data.data);
+      } else {
+        toast.error('Failed to fetch admin data');
+      }
+    } catch (error: any) {
+      console.error('Error fetching admin data:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch admin data');
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
@@ -18,8 +53,13 @@ const AdminManagement = () => {
       router.push('/admin/login')
       return
     }
+
+    if (currentAdmin) {
+      fetchSuperAdminData();
+    }
+
     setIsLoading(false);
-  }, [router])
+  }, [router, currentAdmin])
 
   if (isLoading) {
     return (
@@ -45,19 +85,21 @@ const AdminManagement = () => {
           </div>
 
           {/* Customer Information Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="w-full">
             {/* Customer Information Card */}
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex gap-6">
+            <div className="bg-white rounded-xl shadow p-6 max-w-4xl">
+              <div className="flex flex-col lg:flex-row gap-6">
                 {/* Left Section - Avatar and Actions */}
                 <div className="flex flex-col items-start gap-4">
                   {/* Avatar with Active Status */}
                   <div className="relative">
-                    <div className="w-60 h-60 bg-black rounded-lg flex items-center justify-center">
-                      <span className="text-white text-9xl font-normal">A</span>
+                    <div className="w-48 h-48 lg:w-60 lg:h-60 bg-black rounded-lg flex items-center justify-center">
+                      <span className="text-white text-6xl lg:text-9xl font-normal">
+                        {adminData?.username?.charAt(0).toUpperCase() || 'A'}
+                      </span>
                     </div>
-                    <div className="absolute top-0  bg-green-500 text-white text-xs px-2 py-1 rounded-md">
-                      Active
+                    <div className="absolute top-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-md">
+                      {adminData?.isActive ? 'Active' : 'Inactive'}
                     </div>
                   </div>
                   {/* Change Password Button */}
@@ -70,15 +112,15 @@ const AdminManagement = () => {
                 </div>
 
                 {/* Right Section - User Info */}
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                     <div>
-                      <h2 className="text-xl font-bold text-black">Ankit Kumar</h2>
-                      <p className="text-sm text-gray-600">@superadmin</p>
+                      <h2 className="text-xl font-bold text-black">{adminData?.username || 'Loading...'}</h2>
+                      <p className="text-sm text-gray-600">@{adminData?.role || 'loading'}</p>
                     </div>
                     <button
                       type='button'
-                      className='bg-[#0063B0] text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2'
+                      className='bg-[#0063B0] text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 w-fit'
                       onClick={() => setEditIsModalOpen(true)}
                     >
                       <Edit className='w-4 h-4' />
@@ -89,29 +131,34 @@ const AdminManagement = () => {
                   <hr className='my-4' />
 
                   <div className="space-y-3">
-                    <div className="flex justify-between">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
                       <span className="font-bold text-gray-700">Name:</span>
-                      <span className="text-black">Ankit Kumar</span>
+                      <span className="text-black">{adminData?.username || 'Loading...'}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
                       <span className="font-bold text-gray-700">Email:</span>
-                      <span className="text-black">ankit@superadmin.com</span>
+                      <span className="text-black break-all">{adminData?.email || 'Loading...'}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
                       <span className="font-bold text-gray-700">Role:</span>
-                      <span className="text-black">Superadmin</span>
+                      <span className="text-black">{adminData?.role || 'Loading...'}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
                       <span className="font-bold text-gray-700">Phone:</span>
-                      <span className="text-black">+91 98765 43210</span>
+                      <span className="text-black">{adminData?.phone || 'Loading...'}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
                       <span className="font-bold text-gray-700">Created On:</span>
-                      <span className="text-black">10 Feb 2024</span>
+                      <span className="text-black">
+                        {adminData?.createdAt ? new Date(adminData.createdAt).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        }) : 'Loading...'}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <EditAdmin isModalOpen={editIsModalOpen} setIsModalOpen={setEditIsModalOpen} />
               </div>
             </div>
           </div>

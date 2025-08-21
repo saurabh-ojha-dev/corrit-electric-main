@@ -30,6 +30,14 @@ export const API_ENDPOINTS = {
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     REGISTER: `${API_BASE_URL}/api/auth/register`,
     PROFILE: `${API_BASE_URL}/api/auth/profile`,
+    UPDATE_PROFILE: `${API_BASE_URL}/api/auth/profile`,
+  },
+  ADMIN: {
+    LIST: `${API_BASE_URL}/api/admin`,
+    CREATE: `${API_BASE_URL}/api/admin`,
+    GET: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
+    UPDATE: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
+    DELETE: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
   },
   BIKES: {
     LIST: `${API_BASE_URL}/api/bikes`,

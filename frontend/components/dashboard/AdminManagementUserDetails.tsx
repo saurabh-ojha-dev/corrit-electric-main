@@ -1,9 +1,21 @@
 import { Edit, User } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AddAdmin from './AddAdmin';
 import EditAdmin from './EditAdmin';
+import { apiClient, API_ENDPOINTS } from '@/utils/api';
+import toast from 'react-hot-toast';
 
-// Mock data for admin profiles
+interface AdminData {
+  _id: string;
+  username: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Mock data for admin profiles (keeping for now, but will be replaced with real data)
 const adminProfiles = [
     {
         id: 1,
@@ -32,8 +44,14 @@ const adminProfiles = [
 ];
 
 // Admin Card Component
-const AdminCard = ({ admin }: { admin: typeof adminProfiles[0] }) => {
+const AdminCard = ({ admin, onEdit }: { admin: typeof adminProfiles[0]; onEdit: (admin: typeof adminProfiles[0]) => void }) => {
     const [editIsModalOpen, setEditIsModalOpen] = useState(false);
+
+    const handleEdit = () => {
+        onEdit(admin);
+        setEditIsModalOpen(true);
+    };
+
     return (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 border border-[#0063B0] p-4 rounded-xl">
             {/* Left Section - Avatar and Actions */}
@@ -75,7 +93,7 @@ const AdminCard = ({ admin }: { admin: typeof adminProfiles[0] }) => {
                     <button
                         type='button'
                         className='bg-[#0063B0] text-white px-3 lg:px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm lg:text-base'
-                        onClick={() => setEditIsModalOpen(true)}
+                        onClick={handleEdit}
                     >
                         <Edit className='w-3 h-3 lg:w-4 lg:h-4' />
                         <span>Edit</span>
@@ -111,18 +129,32 @@ const AdminCard = ({ admin }: { admin: typeof adminProfiles[0] }) => {
                     </div>
                 </div>
             </div>
-            <EditAdmin isModalOpen={editIsModalOpen} setIsModalOpen={setEditIsModalOpen} />
+            
+            <EditAdmin 
+                isModalOpen={editIsModalOpen} 
+                setIsModalOpen={setEditIsModalOpen}
+                adminData={null} // For now, passing null since we're using mock data
+                onAdminUpdated={() => {
+                    // This will trigger a refresh when real API is implemented
+                    console.log('Admin updated');
+                }}
+            />
         </div>
     );
 };
 
 const AdminManagementUserDetails = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedAdmin, setSelectedAdmin] = useState<typeof adminProfiles[0] | null>(null);
+
+    const handleEditAdmin = (admin: typeof adminProfiles[0]) => {
+        setSelectedAdmin(admin);
+    };
 
     return (<>
         {/* Heading */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
-            <div className="flex flex-col items-start justify-start gap-2">
+            <div className="flex flex-col items-start justify-staadrt gap-2">
                 <h1 className="text-xl lg:text-2xl font-semibold text-black">Admins list</h1>
                 <p className="text-base lg:text-lg font-normal text-black">Manage admins, roles, and system access.</p>
             </div>
@@ -155,7 +187,7 @@ const AdminManagementUserDetails = () => {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {adminProfiles.map((admin) => (
                     <div key={admin.id} className="bg-white rounded-xl p-4 lg:p-6">
-                        <AdminCard admin={admin} />
+                        <AdminCard admin={admin} onEdit={handleEditAdmin} />
                     </div>
                 ))}
             </div>
