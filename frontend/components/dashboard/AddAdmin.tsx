@@ -8,9 +8,10 @@ import { apiClient, API_ENDPOINTS } from '@/utils/api'
 interface AddAdminProps {
     isModalOpen: boolean;
     setIsModalOpen: (open: boolean) => void;
+    onAdminCreated?: () => void;
 }
 
-const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
+const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen, onAdminCreated }) => {
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -84,8 +85,10 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
                     role: 'admin'
                 });
                 
-                // Trigger a refresh of the admin list
-                window.location.reload();
+                // Call the callback if provided
+                if (onAdminCreated) {
+                    onAdminCreated();
+                }
             } else {
                 toast.error(response.data.message || 'Failed to create admin');
             }
@@ -107,7 +110,10 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) => {
         });
     };
 
-    if (!isModalOpen) return null;
+    // Don't render the modal if it's not open
+    if (!isModalOpen) {
+        return null;
+    }
 
     return (
         <div className="fixed inset-0 bg-black bg-[#000000C2] flex items-center justify-center z-50 p-4">

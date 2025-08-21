@@ -76,13 +76,14 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
       href: '/admin/dashboard/payments',
       hasSubmenu: false
     },
-    {
+    // Only show Admins option for Superadmin users
+    ...(profile?.role === 'Superadmin' ? [{
       id: 'admins',
       label: 'Admins',
       icon: Shield,
       href: '/admin/dashboard/management',
       hasSubmenu: false
-    }
+    }] : [])
   ]
 
   const SidebarContent = () => (

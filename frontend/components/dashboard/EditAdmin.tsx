@@ -101,8 +101,8 @@ const EditAdmin: React.FC<EditAdminProps> = ({
         setIsSubmitting(true);
 
         try {
-            let apiData;
-            let endpoint;
+            let apiData: any;
+            let endpoint: string;
 
             if (isProfileEdit) {
                 // Profile edit - only allow username, email, phone
@@ -119,7 +119,7 @@ const EditAdmin: React.FC<EditAdminProps> = ({
                     email: formData.email,
                     phone: formData.phone,
                     role: formData.role,
-                    isActive: formData.isActive === 'true' || formData.isActive === true
+                    isActive: Boolean(formData.isActive)
                 };
                 endpoint = API_ENDPOINTS.ADMIN.UPDATE(adminData!._id);
             }
