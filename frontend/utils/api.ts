@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     REGISTER: `${API_BASE_URL}/api/auth/register`,
     PROFILE: `${API_BASE_URL}/api/auth/profile`,
     UPDATE_PROFILE: `${API_BASE_URL}/api/auth/profile`,
+    CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
   },
   ADMIN: {
     LIST: `${API_BASE_URL}/api/admin`,
@@ -38,6 +39,7 @@ export const API_ENDPOINTS = {
     GET: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
     UPDATE: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
     DELETE: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
+    SUSPEND: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
   },
   BIKES: {
     LIST: `${API_BASE_URL}/api/bikes`,

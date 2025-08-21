@@ -8,6 +8,7 @@ import AdminManagementUserDetails from './AdminManagementUserDetails'
 import EditAdmin from './EditAdmin'
 import { useAdminProfile } from '@/hooks/useAdminProfile'
 import { API_ENDPOINTS, apiClient } from '@/utils/api'
+import ChangePasswordModal from './ChangePasswordModal'
 
 const AdminManagement = () => {
   interface AdminData {
@@ -26,6 +27,7 @@ const AdminManagement = () => {
   const [editIsModalOpen, setEditIsModalOpen] = useState(false);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
   const { profile: currentAdmin } = useAdminProfile();
+  const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
 
   const fetchSuperAdminData = async () => {
     try {
@@ -106,10 +108,17 @@ const AdminManagement = () => {
                   <button
                     type='button'
                     className='bg-[#0063B0] w-full text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors'
+                    onClick={() => {
+                      setChangePasswordModalOpen(true)
+                    }}
                   >
                     Change Password
                   </button>
                 </div>
+                <ChangePasswordModal
+                  isModalOpen={changePasswordModalOpen}
+                  setIsModalOpen={setChangePasswordModalOpen}
+                />
 
                 {/* Right Section - User Info */}
                 <div className="flex-1 min-w-0">
@@ -162,6 +171,17 @@ const AdminManagement = () => {
               </div>
             </div>
           </div>
+          
+          {adminData && (
+            <EditAdmin
+              isModalOpen={editIsModalOpen}
+              setIsModalOpen={setEditIsModalOpen}
+              adminData={adminData}
+              onAdminUpdated={() => {
+                fetchSuperAdminData();
+              }}
+            />
+          )}
 
           <AdminManagementUserDetails />
         </main>

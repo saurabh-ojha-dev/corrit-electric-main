@@ -73,14 +73,31 @@ const EditAdmin: React.FC<EditAdminProps> = ({
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        // Special handling for phone number validation
+        if (name === 'phone') {
+            // Only allow digits and limit to 10 characters
+            const phoneValue = value.replace(/\D/g, '').slice(0, 10);
+            setFormData(prev => ({
+                ...prev,
+                [name]: phoneValue
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validate phone number length
+        if (formData.phone.length !== 10) {
+            toast.error('Phone number must be exactly 10 digits');
+            return;
+        }
+        
         setIsSubmitting(true);
 
         try {
@@ -96,10 +113,11 @@ const EditAdmin: React.FC<EditAdminProps> = ({
                 };
                 endpoint = API_ENDPOINTS.AUTH.UPDATE_PROFILE;
             } else {
-                // Admin management - allow role and isActive changes
+                // Admin management - allow role, isActive, and phone changes
                 apiData = {
                     username: formData.username,
                     email: formData.email,
+                    phone: formData.phone,
                     role: formData.role,
                     isActive: formData.isActive === 'true' || formData.isActive === true
                 };
@@ -209,11 +227,16 @@ const EditAdmin: React.FC<EditAdminProps> = ({
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleInputChange}
-                                    placeholder="Enter phone number"
+                                    placeholder="Enter 10-digit phone number"
                                     className="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
                                     required
+                                    pattern="[0-9]{10}"
+                                    title="Please enter exactly 10 digits"
                                 />
                             </div>
+                            {formData.phone.length > 0 && formData.phone.length !== 10 && (
+                                <p className="text-red-500 text-xs mt-1">Phone number must be exactly 10 digits</p>
+                            )}
                         </div>
                         
                         {/* Only show role and status for admin management, not profile edit */}

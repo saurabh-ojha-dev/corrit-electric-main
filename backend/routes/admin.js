@@ -115,6 +115,7 @@ router.put('/:id', [
   roleCheck(['Superadmin']),
   body('username').optional().trim().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
   body('email').optional().isEmail().withMessage('Valid email is required'),
+  body('phone').optional().trim().isLength({ min: 10, max: 10 }).withMessage('Phone number must be exactly 10 digits'),
   body('role').optional().isIn(['admin', 'Superadmin']).withMessage('Invalid role'),
   body('isActive').optional().isBoolean().withMessage('isActive must be a boolean')
 ], async (req, res) => {
@@ -128,7 +129,7 @@ router.put('/:id', [
       });
     }
 
-    const { username, email, role, isActive } = req.body;
+    const { username, email, phone, role, isActive } = req.body;
     const adminId = req.params.id;
 
     // Check if admin exists
@@ -140,11 +141,12 @@ router.put('/:id', [
       });
     }
 
-    // Check for duplicate username/email if being updated
-    if (username || email) {
+    // Check for duplicate username/email/phone if being updated
+    if (username || email || phone) {
       const orConditions = [];
       if (username) orConditions.push({ username });
       if (email) orConditions.push({ email });
+      if (phone) orConditions.push({ phone });
       
       const existingAdmin = await Admin.findOne({
         $and: [
@@ -156,7 +158,7 @@ router.put('/:id', [
       if (existingAdmin) {
         return res.status(400).json({
           success: false,
-          message: 'Username or email already exists'
+          message: 'Username, email, or phone number already exists'
         });
       }
     }
@@ -164,6 +166,7 @@ router.put('/:id', [
     // Update fields
     if (username) admin.username = username;
     if (email) admin.email = email;
+    if (phone) admin.phone = phone;
     if (role) admin.role = role;
     if (typeof isActive === 'boolean') admin.isActive = isActive;
 

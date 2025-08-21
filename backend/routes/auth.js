@@ -215,6 +215,49 @@ router.put('/profile', [
   }
 });
 
+// Change password route
+router.put('/change-password', [
+  auth,
+  body('currentPassword').isLength({ min: 6 }).withMessage('Current password must be at least 6 characters'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation failed',
+        errors: errors.array() 
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    
+    // Fetch admin with password field for comparison
+    const admin = await Admin.findById(req.admin._id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await admin.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update password
+    admin.password = newPassword;
+    await admin.save();
+
+    res.json({
+      message: 'Password changed successfully'
+    });
+
+  } catch (error) {
+    console.error('Password change error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Verify token
 router.get('/verify', auth, async (req, res) => {
   try {
