@@ -2,10 +2,11 @@
 import React from 'react'
 import Image from 'next/image'
 import { useAdminProfile } from '@/hooks/useAdminProfile'
+import { useRouter } from 'next/navigation'
 
 const Topheader = () => {
     const { getFirstLetter, loading, profile } = useAdminProfile();
-    console.log("profile", profile)
+    const router = useRouter();
     return (
         <header className="bg-[#1A1818] shadow-sm border-b" >
             <div className="px-3 sm:px-4 lg:px-6 py-1">
@@ -20,7 +21,8 @@ const Topheader = () => {
                         />
                     </div>
                     <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
-                        <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full p-2 sm:p-3 lg:p-4 cursor-pointer">
+                        <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full p-2 sm:p-3 lg:p-4 cursor-pointer"
+                        onClick={()=>router.push('/admin/dashboard/notifications')}>
                             <Image 
                                 src="/notification.svg" 
                                 alt="notification" 
