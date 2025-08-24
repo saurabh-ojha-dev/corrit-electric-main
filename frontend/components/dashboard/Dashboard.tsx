@@ -18,6 +18,7 @@ import {
     ResponsiveContainer,
     ComposedChart
 } from 'recharts'
+import DashboardStatusGrid from './DashboardStatusGrid'
 
 const Dashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -80,105 +81,9 @@ const Dashboard = () => {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 bg-white rounded-[20px] p-3 lg:p-4">
-                        <div className="bg-[#F4FAFF] rounded-xl shadow p-3 lg:p-4">
-                            <div className="flex justify-between">
-                                <p className="text-xs lg:text-sm font-semibold text-black uppercase">ACTIVE MANADATES</p>
-                                <div className="p-2 lg:p-4 rounded-lg" style={{ background: 'radial-gradient(50% 50% at 50% 50%, #63B0EC 0%, #0063B0 100%)' }}>
-                                    <Image src="/group-user-icon.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="flex items-center gap-1 lg:gap-2">
-                                    <p className="text-xl lg:text-3xl font-bold text-black">16</p>
-                                    <span className="text-xs lg:text-sm font-medium text-[#2BB048]">+3% this week</span>
-                                </div>
-                                <p className="text-xs lg:text-sm text-gray-500">Total active subscriptions</p>
-                            </div>
-                        </div>
+                    <DashboardStatusGrid />
 
-                        <div className="bg-[#FFFAE6] rounded-xl shadow p-3 lg:p-4">
-                            <div className="flex justify-between">
-                                <p className="text-xs lg:text-sm font-semibold text-black uppercase">PENDING THIS WEEK</p>
-                                <div className="p-2 lg:p-4 rounded-lg" style={{ background: 'radial-gradient(50% 50% at 50% 50%, #FFEB8F 0%, #F4CA0D 100%)' }}>
-                                    <Image src="/timeline-icon.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="flex items-center gap-1 lg:gap-2">
-                                    <p className="text-xl lg:text-3xl font-bold text-black">16</p>
-                                    <span className="text-xs lg:text-sm font-medium text-[#E51E25]">-2 compared to last week</span>
-                                </div>
-                                <p className="text-xs lg:text-sm text-gray-500">Scheduled for payment</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#FFF6F6] rounded-xl shadow p-3 lg:p-4">
-                            <div className="flex justify-between">
-                                <p className="text-xs lg:text-sm font-semibold text-black uppercase">OVERDUE PAYMENTS</p>
-                                <div className="p-2 lg:p-4 rounded-lg" style={{ background: 'radial-gradient(50% 50% at 50% 50%, #FF6666 0%, #FF0000 100%)' }}>
-                                    <Image src="/alert-line.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="flex items-center gap-1 lg:gap-2">
-                                    <p className="text-xl lg:text-3xl font-bold text-black">16</p>
-                                    <span className="text-xs lg:text-sm font-medium text-[#2BB048]">+3% since yeaterday</span>
-                                </div>
-                                <p className="text-xs lg:text-sm text-gray-500">Require immediate attention</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#EAFFEF] rounded-xl shadow p-3 lg:p-4">
-                            <div className="flex justify-between">
-                                <p className="text-xs lg:text-sm font-semibold text-black uppercase">MONTHLY COLLECTION</p>
-                                <div className="p-2 lg:p-4 rounded-lg" style={{ background: 'radial-gradient(50% 50% at 50% 50%, #50E170 0%, #2BB048 100%)' }}>
-                                    <Image src="/rupee-icon.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="flex items-center gap-1 lg:gap-2">
-                                    <p className="text-xl lg:text-3xl font-bold text-black">₹ 0</p>
-                                    <span className="text-xs lg:text-sm font-medium text-[#2BB048]">+8% vs last month</span>
-                                </div>
-                                <p className="text-xs lg:text-sm text-gray-500">This month's revenue</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#EAFFEF] rounded-xl shadow p-3 lg:p-4">
-                            <div className="flex justify-between">
-                                <p className="text-xs lg:text-sm font-semibold text-black uppercase">Mandate Complete</p>
-                                <div className="p-2 lg:p-4 rounded-lg" style={{ background: 'radial-gradient(50% 50% at 50% 50%, #50E170 0%, #2BB048 100%)' }}>
-                                    <Image src="/rupee-icon.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="flex items-center gap-1 lg:gap-2">
-                                    <p className="text-xl lg:text-3xl font-bold text-black">148</p>
-                                    <span className="text-xs lg:text-sm font-medium text-[#2BB048]">+24% last month</span>
-                                </div>
-                                <p className="text-xs lg:text-sm text-gray-500">Processed this month</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#FFF6F6] rounded-xl shadow p-3 lg:p-4">
-                            <div className="flex justify-between">
-                                <p className="text-xs lg:text-sm font-semibold text-black uppercase">Failed Mandate</p>
-                                <div className="p-2 lg:p-4 rounded-lg" style={{ background: 'radial-gradient(50% 50% at 50% 50%, #FF6666 0%, #FF0000 100%)' }}>
-                                    <Image src="/rejected-icon.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="flex items-center gap-1 lg:gap-2">
-                                    <p className="text-xl lg:text-3xl font-bold text-black">14</p>
-                                    <span className="text-xs lg:text-sm font-medium text-[#E51E25]">-2% from last week</span>
-                                </div>
-                                <p className="text-xs lg:text-sm text-gray-500">Failed this week</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* customers Grid */}
+                    {/* Admin Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 bg-white rounded-[20px] p-3 lg:p-4">
 
                         <div className="bg-[#F4FAFF] rounded-xl shadow p-3 lg:p-4">
@@ -187,11 +92,13 @@ const Dashboard = () => {
                                     <Image src="/group-user-icon.svg" alt="onboarding" width={20} height={20} className="w-5 h-5 lg:w-6 lg:h-6" />
                                 </div>
                                 <div className='flex flex-col gap-1'>
-                                    <p className="text-xs lg:text-sm font-semibold text-black uppercase">Add New Customers</p>
+                                    <p className="text-xs lg:text-sm font-semibold text-black uppercase">Add New Rider</p>
                                     <p className="text-xs font-normal text-[#595959]">Set up a new bike rental subscription</p>
                                 </div>
                             </div>
-                            <button type='button' className='bg-[#0063B0] rounded-lg p-2 lg:p-[10px] w-full text-white mt-2 text-xs lg:text-sm'> Go to Customers </button>
+                            <button type='button' className='bg-[#0063B0] rounded-lg p-2 lg:p-[10px] w-full text-white mt-2 text-xs lg:text-sm'
+                                onClick={() => router.push('/admin/dashboard/riders')}
+                            > Go to Riders </button>
                         </div>
 
                         <div className="bg-[#EAFFEF] rounded-xl shadow p-3 lg:p-4">
@@ -204,7 +111,9 @@ const Dashboard = () => {
                                     <p className="text-xs font-normal text-[#595959]">Track all payments transactions</p>
                                 </div>
                             </div>
-                            <button type='button' className='bg-[#2BB048] rounded-lg p-2 lg:p-[10px] w-full text-white mt-2 text-xs lg:text-sm'>View Payments</button>
+                            <button type='button' className='bg-[#2BB048] rounded-lg p-2 lg:p-[10px] w-full text-white mt-2 text-xs lg:text-sm'
+                                onClick={() => router.push('/admin/dashboard/payments')}
+                            >View Payments</button>
                         </div>
 
                         <div className="bg-[#FFFAE6] rounded-xl shadow p-3 lg:p-4">
@@ -217,7 +126,9 @@ const Dashboard = () => {
                                     <p className="text-xs font-normal text-[#595959]">Manage weekly payment reminders</p>
                                 </div>
                             </div>
-                            <button type='button' className='bg-[#F4CA0D] rounded-lg p-2 lg:p-[10px] w-full text-white mt-2 text-xs lg:text-sm'>Configure Alerts</button>
+                            <button type='button' className='bg-[#F4CA0D] rounded-lg p-2 lg:p-[10px] w-full text-white mt-2 text-xs lg:text-sm'
+                                onClick={() => router.push('/admin/dashboard/notifications')}
+                            >Configure Alerts</button>
                         </div>
 
                     </div>
@@ -237,13 +148,13 @@ const Dashboard = () => {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                            <XAxis 
-                                                dataKey="day" 
+                                            <XAxis
+                                                dataKey="day"
                                                 tick={{ fontSize: 10, fill: '#6B7280' }}
                                                 axisLine={false}
                                                 tickLine={false}
                                             />
-                                            <YAxis 
+                                            <YAxis
                                                 tick={{ fontSize: 10, fill: '#6B7280' }}
                                                 axisLine={false}
                                                 tickLine={false}
@@ -253,17 +164,17 @@ const Dashboard = () => {
                                             <Tooltip />
                                             <Bar dataKey="base" stackId="a" fill="#22C55E" barSize={20} />
                                             <Bar dataKey="top" stackId="a" fill="#86EFAC" barSize={20} />
-                                            <Line 
-                                                type="monotone" 
-                                                dataKey="mandates" 
-                                                stroke="#3B82F6" 
+                                            <Line
+                                                type="monotone"
+                                                dataKey="mandates"
+                                                stroke="#3B82F6"
                                                 strokeWidth={2}
                                                 dot={false}
                                             />
-                                            <Line 
-                                                type="monotone" 
-                                                dataKey="failed" 
-                                                stroke="#EF4444" 
+                                            <Line
+                                                type="monotone"
+                                                dataKey="failed"
+                                                stroke="#EF4444"
                                                 strokeWidth={2}
                                                 strokeDasharray="5 5"
                                                 dot={false}

@@ -64,7 +64,7 @@ const PaymentHistory = () => {
                     <div className="relative flex-1 w-full lg:max-w-md">
                         <input
                             type="text"
-                            placeholder="Search Customers by name, email, or UPI ID..."
+                            placeholder="Search Riders by name, email, or UPI ID..."
                             className="bg-[#00000008] placeholder:text-black w-full pl-8 lg:pl-10 pr-8 lg:pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                         />
                         <svg className="absolute left-2 lg:left-3 top-2.5 h-4 w-4 lg:h-5 lg:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@ const PaymentHistory = () => {
                     <table className="w-full border-collapse-separate min-w-[800px]">
                         <thead className='bg-[#020202] border border-[#FEFDFF]'>
                             <tr className="border-b border-gray-200">
-                                <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white rounded-tl-[12px] text-xs lg:text-sm">Customers</th>
+                                <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white rounded-tl-[12px] text-xs lg:text-sm">Riders</th>
                                 <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Amount</th>
                                 <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Status</th>
                                 <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Type</th>
@@ -123,11 +123,11 @@ const PaymentHistory = () => {
                                             <div className="flex items-center gap-2 lg:gap-3">
                                                 <div className="w-8 h-8 lg:w-10 lg:h-10 bg-black rounded-full flex items-center justify-center">
                                                     <span className="text-white font-bold text-xs lg:text-sm">
-                                                        {payment.customerInitial}
+                                                        {payment.riderIntial}
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium text-gray-900 text-xs lg:text-sm">{payment.customerName}</p>
+                                                    <p className="font-medium text-gray-900 text-xs lg:text-sm">{payment.riderName}</p>
                                                     <p className="text-xs lg:text-sm text-gray-500">ID: {payment.id}</p>
                                                 </div>
                                             </div>

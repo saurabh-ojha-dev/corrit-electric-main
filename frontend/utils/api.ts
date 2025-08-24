@@ -16,14 +16,6 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-// Enhanced debugging
-console.log('=== API Configuration Debug ===');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('NEXT_PUBLIC_API_URL env var:', process.env.NEXT_PUBLIC_API_URL);
-console.log('Final API_BASE_URL:', API_BASE_URL);
-console.log('Window object available:', typeof window !== 'undefined');
-console.log('================================');
-
 // API endpoints
 export const API_ENDPOINTS = {
   AUTH: {

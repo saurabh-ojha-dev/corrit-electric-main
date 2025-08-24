@@ -5,7 +5,7 @@ import { Calendar, CheckCircle, Download, X, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import Pagination from '../common/Pagination'
-import { customersData, nitinKumarPayments, paymentHistoryData } from '@/constants/data'
+import { nitinKumarPayments } from '@/constants/data'
 
 const PaymentHistoryDetails = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -44,12 +44,12 @@ const PaymentHistoryDetails = () => {
                         <h1 className="text-xl lg:text-2xl font-semibold text-black border-b-2 border-[#E51E25] pb-1">Nitin Kumar Payments</h1>
                     </div>
 
-                    {/* Customer Information Section */}
+                    {/* Rider Information Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                        {/* Customer Information Card */}
+                        {/* Rider Information Card */}
                         <div className="bg-white rounded-xl shadow py-3 lg:py-4">
                             <div className="bg-[#E51E25] text-white px-3 lg:px-4 py-2 rounded-tr-3xl w-1/2 mb-3 lg:mb-4">
-                                <h2 className="font-semibold text-sm lg:text-base">Customer Information</h2>
+                                <h2 className="font-semibold text-sm lg:text-base">Rider Information</h2>
                             </div>
                             <div className="space-y-2 lg:space-y-3 px-3 lg:px-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">

@@ -3,28 +3,16 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Download, Mail, Phone, Trash2, CheckCircle, XCircle, User, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import Pagination from '../common/Pagination'
-import { customerStatusData } from '@/constants/data'
-import AddCustomer from './AddCustomer'
 import { apiClient, API_ENDPOINTS } from '@/utils/api'
+import { Rider } from '@/components/helperMethods/interface'
+import AddRider from './AddRIder'
+import Pagination from '@/components/common/Pagination'
+import ExportCSV from '@/components/common/ExportCSV'
+import { formatDate, getNextPaymentDate } from '@/components/helperMethods/FormatDate'
 
-interface Rider {
-    _id: string;
-    riderId: string;
-    name: string;
-    email: string;
-    phone: string;
-    upiId: string;
-    weeklyRentAmount: number;
-    mandateStatus: 'pending' | 'active' | 'failed' | 'revoked';
-    verificationStatus: 'pending' | 'verified' | 'rejected';
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
-const Customers = () => {
+const Riders = () => {
     const [isLoading, setIsLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [riders, setRiders] = useState<Rider[]>([]);
     const [totalRiders, setTotalRiders] = useState(0);
@@ -51,17 +39,18 @@ const Customers = () => {
             const params = new URLSearchParams({
                 page: currentPage.toString(),
                 limit: '10',
+                verificationStatus: 'approved', // Add this line to filter only approved riders
                 ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
                 ...(statusFilter && { mandateStatus: statusFilter })
             });
 
             const response = await apiClient.get(`${API_ENDPOINTS.RIDERS.LIST}?${params}`);
-            
+
             if (response.data.success) {
                 setRiders(response.data.riders || []);
                 setTotalRiders(response.data.total || 0);
             } else {
-                toast.error('Failed to fetch customers');
+                toast.error('Failed to fetch Riders');
             }
         } catch (error: any) {
             console.error('Error fetching riders:', error);
@@ -72,7 +61,7 @@ const Customers = () => {
                 setRiders([]);
                 setTotalRiders(0);
             } else {
-                toast.error('Failed to fetch customers');
+                toast.error('Failed to fetch Riders');
             }
         } finally {
             setIsLoading(false);
@@ -81,28 +70,28 @@ const Customers = () => {
 
     // Delete rider
     const handleDeleteRider = async (riderId: string) => {
-        if (!confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+        if (!confirm('Are you sure you want to delete this Rider? This action cannot be undone.')) {
             return;
         }
 
         try {
             setIsDeleting(riderId);
             const response = await apiClient.delete(API_ENDPOINTS.RIDERS.DELETE(riderId));
-            
+
             if (response.data.success) {
-                toast.success('Customer deleted successfully');
+                toast.success('Rider deleted successfully');
                 fetchRiders(); // Refresh the list
             } else {
-                toast.error(response.data.message || 'Failed to delete customer');
+                toast.error(response.data.message || 'Failed to delete Rider');
             }
         } catch (error: any) {
             console.error('Error deleting rider:', error);
             if (error.response?.status === 401) {
                 toast.error('Authentication required. Please login again.');
             } else if (error.response?.status === 403) {
-                toast.error('You do not have permission to delete customers');
+                toast.error('You do not have permission to delete Riders');
             } else {
-                toast.error('Failed to delete customer');
+                toast.error('Failed to delete Rider');
             }
         } finally {
             setIsDeleting(null);
@@ -130,6 +119,117 @@ const Customers = () => {
         }
         fetchRiders();
     }, [currentPage, debouncedSearchTerm, statusFilter, router]);
+
+    // Fetch all riders for CSV export (without pagination)
+    const fetchAllRidersForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                limit: '1000', // Large limit to get all riders
+                verificationStatus: 'approved', // Only approved riders
+                ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
+                ...(statusFilter && { mandateStatus: statusFilter })
+            });
+
+            const response = await apiClient.get(`${API_ENDPOINTS.RIDERS.LIST}?${params}`);
+
+            if (response.data.success) {
+                return response.data.riders || [];
+            } else {
+                throw new Error('Failed to fetch riders for export');
+            }
+        } catch (error: any) {
+            console.error('Error fetching riders for export:', error);
+            throw error;
+        }
+    };
+
+    // Convert riders data to CSV format
+    const convertToCSV = (riders: Rider[]) => {
+        const headers = [
+            'Rider Name',
+            'Rider ID',
+            'Email',
+            'Phone',
+            'UPI ID',
+            'Address',
+            'Weekly Rent Amount',
+            'Mandate Status',
+            'Verification Status',
+            'Created At',
+            'Next Payment Date'
+        ];
+
+        const csvRows = [headers.join(',')];
+
+        riders.forEach(rider => {
+            const row = [
+                `"${rider.name || ''}"`,
+                `"${rider.riderId || ''}"`,
+                `"${rider.email || ''}"`,
+                `"${rider.phone || ''}"`,
+                `"${rider.upiId || ''}"`,
+                `"${rider.address || ''}"`,
+                rider.weeklyRentAmount || 0,
+                rider.mandateStatus || 'pending',
+                rider.verificationStatus || 'pending',
+                `"${formatDate(rider.createdAt)}"`,
+                `"${getNextPaymentDate(rider.createdAt)}"`
+            ];
+            csvRows.push(row.join(','));
+        });
+
+        return csvRows.join('\n');
+    };
+
+    // Export CSV function
+    const handleExportCSV = async () => {
+        try {
+            setIsExporting(true);
+            const loadingToast = toast.loading('Preparing CSV export...');
+
+            // Fetch all riders for export
+            const allRiders = await fetchAllRidersForExport();
+
+            if (allRiders.length === 0) {
+                toast.dismiss(loadingToast);
+                toast.error('No riders found to export');
+                return;
+            }
+
+            // Convert to CSV
+            const csvContent = convertToCSV(allRiders);
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `riders_${timestamp}.csv`;
+            link.download = filename;
+
+            document.body.appendChild(link);
+            link.click();
+
+            // Cleanup
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.dismiss(loadingToast);
+            toast.success(`CSV exported successfully with ${allRiders.length} riders`);
+        } catch (error: any) {
+            console.error('Error exporting CSV:', error);
+            if (error.response?.status === 401) {
+                toast.error('Authentication required. Please login again.');
+            } else {
+                toast.error('Failed to export CSV');
+            }
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const getMandateStatusBadge = (status: string) => {
         switch (status) {
@@ -173,7 +273,7 @@ const Customers = () => {
             <div className="flex w-full h-full bg-[#F8F8F8] items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 lg:h-12 lg:w-12 border-b-2 border-black mx-auto"></div>
-                    <p className="mt-2 lg:mt-4 text-black text-sm lg:text-base">Loading customers...</p>
+                    <p className="mt-2 lg:mt-4 text-black text-sm lg:text-base">Loading Riders...</p>
                 </div>
             </div>
         )
@@ -189,20 +289,17 @@ const Customers = () => {
                     {/* Heading */}
                     <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
                         <div className="flex flex-col items-start justify-start gap-2">
-                            <h1 className="text-xl lg:text-2xl font-semibold text-black border-b-2 border-[#E51E25] pb-1">Customers</h1>
-                            <p className="text-sm lg:text-lg font-normal text-black">Manage bike rental Customers and their Payment manadates
-                                <span className='text-[#595959] font-normal pl-2'>|</span>
-                                <span className='text-[#595959] font-normal pl-2'>{totalRiders} total customers</span>
-                            </p>
+                            <h1 className="text-xl lg:text-2xl font-semibold text-black border-b-2 border-[#E51E25] pb-1">Riders</h1>
+                            <p className="text-sm lg:text-lg font-normal text-black">Manage bike rental Riders and their Payment manadates</p>
                         </div>
                         <div className='flex items-center gap-2 w-full sm:w-auto'>
-                            <button 
-                                type='button' 
+                            <button
+                                type='button'
                                 onClick={() => setIsModalOpen(true)}
                                 className='bg-[#0063B0] text-white px-3 lg:px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex justify-between items-center gap-2 text-sm lg:text-base w-full sm:w-auto'
                             >
                                 <User className='w-3 h-3 lg:w-4 lg:h-4 text-white' />
-                                <span>Add Customer</span>
+                                <span>Add Rider</span>
                             </button>
                         </div>
                     </div>
@@ -214,7 +311,7 @@ const Customers = () => {
                             <div className="relative flex-1 w-full lg:max-w-md">
                                 <input
                                     type="text"
-                                    placeholder="Search Customers by name, email, or UPI ID..."
+                                    placeholder="Search Riders by name, email, or UPI ID..."
                                     className="bg-[#00000008] placeholder:text-black w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -250,10 +347,7 @@ const Customers = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <button type='button' className="bg-black text-white px-3 lg:px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex justify-between items-center gap-2 text-sm lg:text-base w-full sm:w-auto">
-                                    <Download className="w-3 h-3 lg:w-4 lg:h-4 text-white" />
-                                    <span>Export CSV</span>
-                                </button>
+                                <ExportCSV handleExportCSV={handleExportCSV} isExporting={isExporting} />
                             </div>
                         </div>
 
@@ -268,7 +362,7 @@ const Customers = () => {
                             <table className="w-full border-collapse-separate min-w-[800px]">
                                 <thead className='bg-[#020202] border border-[#FEFDFF]'>
                                     <tr className="border-b border-gray-200">
-                                        <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white rounded-tl-[12px] text-xs lg:text-sm">Customers</th>
+                                        <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white rounded-tl-[12px] text-xs lg:text-sm">Riders</th>
                                         <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Contact Info</th>
                                         <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Mandate Status</th>
                                         <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Weekly Amount</th>
@@ -309,7 +403,7 @@ const Customers = () => {
                                                 <span className="text-xs lg:text-sm font-medium text-gray-900">{rider.weeklyRentAmount}</span>
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
-                                                <span className="text-xs lg:text-sm text-gray-900">{rider.updatedAt}</span>
+                                                <span className="text-xs lg:text-sm text-gray-900">{getNextPaymentDate(rider.createdAt)}</span>
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
                                                 <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">
@@ -321,37 +415,37 @@ const Customers = () => {
                                                             Cancel Mandate
                                                         </button>
                                                     )}
-                                                                                                         <button 
-                                                         title='delete' 
-                                                         type='button' 
-                                                         onClick={() => handleDeleteRider(rider._id)}
-                                                         className="text-[#E51E25] hover:text-red-800"
-                                                         disabled={isDeleting === rider._id}
-                                                     >
-                                                         {isDeleting === rider._id ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />}
-                                                     </button>
+                                                    <button
+                                                        title='delete'
+                                                        type='button'
+                                                        onClick={() => handleDeleteRider(rider._id)}
+                                                        className="text-[#E51E25] hover:text-red-800"
+                                                        disabled={isDeleting === rider._id}
+                                                    >
+                                                        {isDeleting === rider._id ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />}
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                            
+
                             {!isLoading && riders.length === 0 && (
                                 <div className="text-center py-8">
                                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <User className="w-8 h-8 text-gray-400" />
                                     </div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Riders found</h3>
                                     <p className="text-gray-500 mb-4">
-                                        {searchTerm || statusFilter ? 'Try adjusting your search or filter criteria.' : 'Get started by adding your first customer.'}
+                                        {searchTerm || statusFilter ? 'Try adjusting your search or filter criteria.' : 'Get started by adding your first Rider.'}
                                     </p>
                                     {!searchTerm && !statusFilter && (
                                         <button
                                             onClick={() => setIsModalOpen(true)}
                                             className="bg-[#0063B0] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                         >
-                                            Add Customer
+                                            Add Rider
                                         </button>
                                     )}
                                 </div>
@@ -359,7 +453,7 @@ const Customers = () => {
                         </div>
 
                         {/* Pagination */}
-                        <Pagination 
+                        <Pagination
                             currentPage={currentPage}
                             totalItems={totalRiders}
                             itemsPerPage={10}
@@ -370,10 +464,10 @@ const Customers = () => {
                 </main>
             </div>
 
-            {/* Add Customer Modal */}
-            <AddCustomer isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
+            {/* Add New Rider Modal */}
+            <AddRider isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
         </div>
     )
 }
 
-export default Customers
+export default Riders

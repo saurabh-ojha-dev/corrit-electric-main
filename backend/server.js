@@ -13,6 +13,7 @@ const notificationRoutes = require('./routes/notifications');
 const trackingRoutes = require('./routes/tracking');
 const webhookRoutes = require('./routes/webhooks');
 const reportRoutes = require('./routes/reports');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +53,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -78,5 +80,4 @@ app.use('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`API URL: http://localhost:${PORT}/api`);
 });

@@ -11,8 +11,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     let activePage = 'dashboard';
     if (pathname.includes('/rider-onboarding')) {
         activePage = 'rideronboarding';
-    } else if (pathname.includes('/customers')) {
-        activePage = 'customers';
+    } else if (pathname.includes('/riders')) {
+        activePage = 'riders';
+    } else if (pathname.includes('/location')) {
+        activePage = 'location';
     } else if (pathname.includes('/payments')) {
         activePage = 'payments';
     } else if (pathname.includes('/management')) {

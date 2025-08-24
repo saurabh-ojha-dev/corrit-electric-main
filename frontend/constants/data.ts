@@ -1,4 +1,4 @@
-export const customersData = [
+export const ridersData = [
     {
         name: "Ajay Kumar",
         rid: "RID-BLR25-0234",
@@ -51,7 +51,7 @@ export const customersData = [
     }
 ];
 
-export const customerStatusData = [
+export const riderStatusData = [
     {
         id: "9498567820@ptsbi",
         name: "Aarav Mehta",
@@ -118,8 +118,8 @@ export const customerStatusData = [
 export const paymentHistoryData = [
     {
         id: "PMT-874392",
-        customerName: "Nitin Kumar",
-        customerInitial: "N",
+        riderName: "Nitin Kumar",
+        riderIntial: "N",
         amount: "₹700",
         status: "Success",
         type: "AUTOMATED_WEEKLY_DEBIT",
@@ -128,8 +128,8 @@ export const paymentHistoryData = [
     },
     {
         id: "PMT-874393",
-        customerName: "Priya Sharma",
-        customerInitial: "P",
+        riderName: "Priya Sharma",
+        riderIntial: "P",
         amount: "₹700",
         status: "Failed",
         type: "AUTOMATED_WEEKLY_DEBIT",
@@ -138,8 +138,8 @@ export const paymentHistoryData = [
     },
     {
         id: "PMT-874394",
-        customerName: "Rahul Verma",
-        customerInitial: "R",
+        riderName: "Rahul Verma",
+        riderIntial: "R",
         amount: "₹700",
         status: "Success",
         type: "AUTOMATED_WEEKLY_DEBIT",
@@ -148,8 +148,8 @@ export const paymentHistoryData = [
     },
     {
         id: "PMT-874395",
-        customerName: "Anjali Patel",
-        customerInitial: "A",
+        riderName: "Anjali Patel",
+        riderIntial: "A",
         amount: "₹700",
         status: "Success",
         type: "AUTOMATED_WEEKLY_DEBIT",
@@ -158,8 +158,8 @@ export const paymentHistoryData = [
     },
     {
         id: "PMT-874396",
-        customerName: "Vikram Singh",
-        customerInitial: "V",
+        riderName: "Vikram Singh",
+        riderIntial: "V",
         amount: "₹700",
         status: "Failed",
         type: "AUTOMATED_WEEKLY_DEBIT",
@@ -168,8 +168,8 @@ export const paymentHistoryData = [
     },
     {
         id: "PMT-874397",
-        customerName: "Meera Reddy",
-        customerInitial: "M",
+        riderName: "Meera Reddy",
+        riderIntial: "M",
         amount: "₹700",
         status: "Success",
         type: "AUTOMATED_WEEKLY_DEBIT",

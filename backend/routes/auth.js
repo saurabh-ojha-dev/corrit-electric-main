@@ -15,7 +15,6 @@ router.post('/login', [
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
       return res.status(400).json({ 
         message: 'Validation failed',
         errors: errors.array() 
@@ -23,38 +22,21 @@ router.post('/login', [
     }
 
     const { username, password } = req.body;
-    console.log('=== LOGIN ATTEMPT ===');
-    console.log('Username:', username);
-    console.log('Password length:', password.length);
 
     // Find admin by username
     const admin = await Admin.findOne({ username });
-    console.log('Admin found:', admin ? 'Yes' : 'No');
     if (!admin) {
-      console.log('No admin found with username:', username);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log('Admin details:', {
-      id: admin._id,
-      username: admin.username,
-      role: admin.role,
-      isActive: admin.isActive,
-      email: admin.email
-    });
-
     // Check if admin is active
     if (!admin.isActive) {
-      console.log('Admin account is inactive');
       return res.status(401).json({ message: 'Account is deactivated' });
     }
 
     // Verify password
-    console.log('Attempting password comparison...');
     const isPasswordValid = await admin.comparePassword(password);
-    console.log('Password comparison result:', isPasswordValid);
     if (!isPasswordValid) {
-      console.log('Password validation failed');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -63,15 +45,11 @@ router.post('/login', [
     await admin.save();
 
     // Generate JWT token
-    console.log('Generating JWT token...');
     const token = jwt.sign(
       { adminId: admin._id, role: admin.role },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
-    console.log('JWT token generated successfully');
-
-    console.log('=== LOGIN SUCCESSFUL ===');
     res.json({
       message: 'Login successful',
       token,

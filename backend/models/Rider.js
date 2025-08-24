@@ -49,36 +49,9 @@ const riderSchema = new mongoose.Schema({
     trim: true
   },
   address: {
-    street: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    city: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    state: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    pincode: {
-      type: String,
-      required: true,
-      validate: {
-        validator: function(v) {
-          return /^[1-9][0-9]{5}$/.test(v);
-        },
-        message: props => `${props.value} is not a valid pincode!`
-      }
-    }
-  },
-  gender: {
     type: String,
-    enum: ['male', 'female', 'other'],
-    required: true
+    required: true,
+    trim: true
   },
   weeklyRentAmount: {
     type: Number,
@@ -94,27 +67,59 @@ const riderSchema = new mongoose.Schema({
   documents: {
     aadhaar: {
       type: String,
-      required: false
+      required: false,
+      validate: {
+        validator: function(v) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'Aadhaar document must be a valid URL'
+      }
     },
     pan: {
       type: String,
-      required: false
+      required: false,
+      validate: {
+        validator: function(v) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'PAN document must be a valid URL'
+      }
     },
     addressProof: {
       type: String,
-      required: false
+      required: false,
+      validate: {
+        validator: function(v) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'Address proof must be a valid URL'
+      }
     },
     bankProof: {
       type: String,
-      required: false
+      required: false,
+      validate: {
+        validator: function(v) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'Bank proof must be a valid URL'
+      }
     },
     batteryCard: {
       type: String,
-      required: false // Optional document
+      required: false,
+      default: undefined,
+
     },
     picture: {
       type: String,
-      required: false
+      required: false,
+      validate: {
+        validator: function(v) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'Profile picture must be a valid URL'
+      }
     }
   },
   verificationStatus: {
@@ -154,9 +159,9 @@ riderSchema.index({ verificationStatus: 1 });
 riderSchema.index({ assignedAdmin: 1 });
 riderSchema.index({ isActive: 1 });
 
-// Virtual for full address
+// Update virtual for full address to work with string
 riderSchema.virtual('fullAddress').get(function() {
-  return `${this.address.street}, ${this.address.city}, ${this.address.state} - ${this.address.pincode}`;
+  return this.address; // Now just returns the address string
 });
 
 // Method to generate next Rider ID

@@ -119,7 +119,7 @@ const Notifications = () => {
                             <div className="relative flex-1 w-full lg:max-w-md">
                                 <input
                                     type="text"
-                                    placeholder="Search Customers by name, email, or UPI ID..."
+                                    placeholder="Search Riders by name, email, or UPI ID..."
                                     className="bg-[#00000008] placeholder:text-black w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                                 // value={searchTerm}
                                 // onChange={(e) => setSearchTerm(e.target.value)}

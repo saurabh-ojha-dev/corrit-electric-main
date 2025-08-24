@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Download, Mail, Phone, Trash2, CheckCircle, XCircle, User, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Pagination from '../common/Pagination'
-import { customerStatusData } from '@/constants/data'
+import { riderStatusData } from '@/constants/data'
 import Image from 'next/image'
 import PaymentHistory from './PaymentHistory'
 
@@ -52,7 +52,7 @@ const Payments = () => {
                             <div className="relative flex-1 w-full lg:max-w-md">
                                 <input
                                     type="text"
-                                    placeholder="Search Customers by name, email, or UPI ID..."
+                                    placeholder="Search Riders by name, email, or UPI ID..."
                                     className="bg-[#00000008] placeholder:text-black w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                                 />
                                 <svg className="absolute left-2 lg:left-3 top-2.5 h-4 w-4 lg:h-5 lg:w-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,22 +100,22 @@ const Payments = () => {
                             </div>
                         </div>
 
-                        {/* Customer Payment Cards Grid */}
+                        {/* Rider Payment Cards Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
-                            {customerStatusData.map((customer, index) => (
-                                <div key={customer.id} className="bg-[#F5F5F5] rounded-lg p-3 lg:p-4">
+                            {riderStatusData.map((rider, index) => (
+                                <div key={rider.id} className="bg-[#F5F5F5] rounded-lg p-3 lg:p-4">
                                     <div className="flex items-start justify-between">
-                                        {/* Customer Avatar */}
+                                        {/* Rider Avatar */}
                                         <div className="w-10 h-10 lg:w-12 lg:h-12 bg-black rounded-lg flex items-center justify-center">
                                             <span className="text-white font-bold text-sm lg:text-lg">
-                                                {customer.name.charAt(0).toUpperCase()}
+                                                {rider.name.charAt(0).toUpperCase()}
                                             </span>
                                         </div>
 
-                                        {/* Customer Info */}
+                                        {/* Rider Info */}
                                         <div className="flex-1 ml-2 lg:ml-3">
-                                            <h3 className="font-bold text-black text-sm lg:text-base">{customer.name}</h3>
-                                            <p className="text-xs lg:text-sm text-gray-600">{customer.email}</p>
+                                            <h3 className="font-bold text-black text-sm lg:text-base">{rider.name}</h3>
+                                            <p className="text-xs lg:text-sm text-gray-600">{rider.email}</p>
                                         </div>
 
                                         {/* Payment Details */}

@@ -1,9 +1,9 @@
+import Riders from '@/components/dashboard/Rider/Riders'
 import React from 'react'
-import Customers from '@/components/dashboard/Customers'
 
 const page = () => {
     return (
-        <Customers />
+        <Riders />
     )
 }
 

@@ -7,13 +7,19 @@ const Rider = require('../models/Rider');
 const Payment = require('../models/Payment');
 const Notification = require('../models/Notification');
 
-// Validation middleware
+// Validation middleware - Updated to match frontend fields
 const validateRider = [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('phone').matches(/^[6-9]\d{9}$/).withMessage('Valid Indian phone number is required'),
   body('upiId').trim().isLength({ min: 3 }).withMessage('UPI ID is required'),
-  body('weeklyRentAmount').isNumeric().isFloat({ min: 1 }).withMessage('Valid rent amount is required')
+  body('weeklyRentAmount').isNumeric().isFloat({ min: 1 }).withMessage('Valid rent amount is required'),
+  body('aadhaarCard').optional().trim(),
+  body('panCard').optional().trim(),
+  body('address').trim().isLength({ min: 5 }).withMessage('Address is required'),
+  body('bankAccountNumber').optional().trim(),
+  body('batterySmartCard').optional().trim(),
+  body('documents').optional().isObject().withMessage('Documents must be an object')
 ];
 
 // @route   GET /api/riders
@@ -84,14 +90,9 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], async (req, res) => {
   try {
-    // Add debugging logs
-    console.log('POST /api/riders - Request received');
-    console.log('Admin user:', req.admin);
-    console.log('Request body:', req.body);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
@@ -100,10 +101,14 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
       email,
       phone,
       upiId,
-      address,
-      gender,
       weeklyRentAmount,
-      assignedRegion = 'Bangalore Zone'
+      aadhaarCard,
+      panCard,
+      address,
+      bankAccountNumber,
+      batterySmartCard,
+      documents,
+      status
     } = req.body;
 
     // Check for existing rider
@@ -112,7 +117,7 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
     });
 
     if (existingRider) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: 'Rider with this email, phone, or UPI ID already exists'
       });
@@ -121,9 +126,18 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
     // Generate unique Rider ID
     const cityCode = 'BLR'; // Default city code
     const riderId = await Rider.generateRiderId(cityCode);
-    console.log('Generated Rider ID:', riderId);
 
-    // Create rider
+    // Prepare documents object - prioritize uploaded URLs over text inputs
+    const documentsObj = {
+      aadhaar: documents?.aadhaar || aadhaarCard || undefined,
+      pan: documents?.pan || panCard || undefined,
+      addressProof: documents?.addressProof || undefined,
+      bankProof: documents?.bankProof || bankAccountNumber || undefined,
+      batteryCard: documents?.batteryCard || batterySmartCard || undefined,
+      picture: documents?.picture || undefined
+    };
+
+    // Create rider with updated field mapping
     const rider = new Rider({
       riderId,
       name,
@@ -131,21 +145,12 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
       phone,
       upiId,
       address,
-      gender,
-      weeklyRentAmount,
+      weeklyRentAmount: parseFloat(weeklyRentAmount),
       assignedAdmin: req.admin._id,
-      documents: {
-        aadhaar: '',
-        pan: '',
-        addressProof: '',
-        bankProof: '',
-        picture: ''
-      }
+      documents: documentsObj,
     });
 
-    console.log('Saving rider to database...');
     const savedRider = await rider.save();
-    console.log('Rider saved successfully:', savedRider._id);
 
     // Create notification for new rider registration
     try {
@@ -170,7 +175,81 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
   } catch (error) {
     console.error('Error creating rider:', error);
     console.error('Error stack:', error.stack);
+    
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(409).json({
+        success: false,
+        message: `Rider with this ${field} already exists`
+      });
+    }
+    
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+  }
+});
+
+// @route   PATCH /api/riders/:id
+// @desc    Update rider verification status
+// @access  Private
+router.patch('/:id', [auth, roleCheck(['Superadmin', 'admin'])], async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verificationStatus } = req.body;
+
+    // Validate verification status
+    if (!verificationStatus || !['pending', 'approved', 'rejected'].includes(verificationStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification status. Must be pending, approved, or rejected'
+      });
+    }
+
+    // Find and update rider
+    const rider = await Rider.findByIdAndUpdate(
+      id,
+      { verificationStatus },
+      { new: true, runValidators: true }
+    );
+
+    if (!rider) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found'
+      });
+    }
+
+    // Create notification for status change
+    try {
+      const notificationType = verificationStatus === 'approved' ? 'rider_approved' : 'rider_rejected';
+      const notificationTitle = verificationStatus === 'approved' 
+        ? `Rider Approved – ${rider.riderId}`
+        : `Rider Rejected – ${rider.riderId}`;
+      const notificationDescription = verificationStatus === 'approved'
+        ? 'Rider documents verified and approved. Ready for mandate setup.'
+        : 'Rider documents rejected. Requires re-upload and review.';
+
+      await Notification.create({
+        type: notificationType,
+        title: notificationTitle,
+        description: notificationDescription,
+        riderId: rider._id,
+        priority: verificationStatus === 'approved' ? 'low' : 'high',
+        actionRequired: verificationStatus === 'rejected'
+      });
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail the update if notification fails
+    }
+
+    res.json({
+      success: true,
+      message: `Rider ${verificationStatus} successfully`,
+      rider
+    });
+  } catch (error) {
+    console.error('Error updating rider:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

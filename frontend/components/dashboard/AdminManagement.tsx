@@ -86,9 +86,9 @@ const AdminManagement = () => {
             <h1 className="text-2xl font-semibold text-black border-b-2 border-[#E51E25]">Admin Managements</h1>
           </div>
 
-          {/* Customer Information Section */}
+          {/* Admin Information Section */}
           <div className="w-full">
-            {/* Customer Information Card */}
+            {/* Admin Information Card */}
             <div className="bg-white rounded-xl shadow p-6 max-w-4xl">
               <div className="flex flex-col lg:flex-row gap-6">
                 {/* Left Section - Avatar and Actions */}

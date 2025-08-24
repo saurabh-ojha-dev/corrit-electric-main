@@ -66,10 +66,7 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen, onAdmi
             toast.error('Phone number must be exactly 10 digits');
             return;
         }
-        
-        // Debug: Log the form data being sent
-        console.log('Form data being sent:', formData);
-        
+                
         try {
             // Send form data directly as it matches the backend structure
             const response = await apiClient.post(API_ENDPOINTS.ADMIN.CREATE, formData);
@@ -178,6 +175,7 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen, onAdmi
                             <div className="relative">
                                 <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
                                 <select
+                                    title='role'
                                     name="role"
                                     value={formData.role}
                                     onChange={handleInputChange}

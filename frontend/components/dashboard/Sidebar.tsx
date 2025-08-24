@@ -13,7 +13,8 @@ import {
   RefreshCcw,
   Map,
   Menu,
-  X
+  X,
+  Locate
 } from 'lucide-react'
 import { useAdminProfile } from '@/hooks/useAdminProfile'
 
@@ -63,10 +64,17 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
       hasSubmenu: false
     },
     {
-      id: 'customers',
-      label: 'Customers',
+      id: 'riders',
+      label: 'Riders',
       icon: Users,
-      href: '/admin/dashboard/customers',
+      href: '/admin/dashboard/riders',
+      hasSubmenu: false
+    },
+    {
+      id: 'location',
+      label: 'Location',
+      icon: Locate,
+      href: '/admin/dashboard/location',
       hasSubmenu: false
     },
     {
