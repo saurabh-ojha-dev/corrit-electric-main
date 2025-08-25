@@ -14,7 +14,8 @@ import {
   Map,
   Menu,
   X,
-  Locate
+  Locate,
+  Bike
 } from 'lucide-react'
 import { useAdminProfile } from '@/hooks/useAdminProfile'
 
@@ -68,6 +69,13 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
       label: 'Riders',
       icon: Users,
       href: '/admin/dashboard/riders',
+      hasSubmenu: false
+    },
+    {
+      id: 'vehicle-inventory',
+      label: 'Vehicle Inventory',
+      icon: Bike,
+      href: '/admin/dashboard/vehicle-inventory',
       hasSubmenu: false
     },
     {

@@ -14,6 +14,7 @@ const trackingRoutes = require('./routes/tracking');
 const webhookRoutes = require('./routes/webhooks');
 const reportRoutes = require('./routes/reports');
 const uploadRoutes = require('./routes/upload');
+const vehicleRoutes = require('./routes/vehicles');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +55,7 @@ app.use('/api/tracking', trackingRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/vehicles', vehicleRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

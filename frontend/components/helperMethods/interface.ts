@@ -86,3 +86,25 @@ export interface Rider {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface Vehicle {
+  _id: string;
+  vehicleName: string;
+  vehicleRegistrationNumber: string;
+  vehicleChassisNumber: string;
+  vehicleMotorNumber: string;
+  iotImeiNumber: string;
+  controllerNumber?: string;
+  isActive: boolean;
+  createdAt: string;
+  riderId?: {
+    _id: string;
+    name: string;
+    riderId: string;
+  };
+  assignedRiderId?: {
+    _id: string;
+    name: string;
+    riderId: string;
+  };
+}

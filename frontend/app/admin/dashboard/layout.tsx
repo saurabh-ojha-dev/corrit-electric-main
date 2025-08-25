@@ -13,6 +13,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         activePage = 'rideronboarding';
     } else if (pathname.includes('/riders')) {
         activePage = 'riders';
+    } else if (pathname.includes('/vehicle-inventory')) {
+        activePage = 'vehicle-inventory';
     } else if (pathname.includes('/location')) {
         activePage = 'location';
     } else if (pathname.includes('/payments')) {

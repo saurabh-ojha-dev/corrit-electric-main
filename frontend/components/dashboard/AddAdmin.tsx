@@ -113,7 +113,7 @@ const AddAdmin: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen, onAdmi
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-[#000000C2] flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-[#000000C2] flex items-center justify-center z-50 p-4">
             <div ref={modalRef} className="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 {/* Modal Header */}
                 <div className="flex justify-between items-start mb-4 lg:mb-6">

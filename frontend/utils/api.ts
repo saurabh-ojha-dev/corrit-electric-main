@@ -33,11 +33,13 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
     SUSPEND: (id: string) => `${API_BASE_URL}/api/admin/${id}`,
   },
-  BIKES: {
-    LIST: `${API_BASE_URL}/api/bikes`,
-    CREATE: `${API_BASE_URL}/api/bikes`,
-    UPDATE: (id: string) => `${API_BASE_URL}/api/bikes/${id}`,
-    DELETE: (id: string) => `${API_BASE_URL}/api/bikes/${id}`,
+  VEHICLES: {
+    LIST: `${API_BASE_URL}/api/vehicles`,
+    CREATE: `${API_BASE_URL}/api/vehicles`,
+    UPDATE: (id: string) => `${API_BASE_URL}/api/vehicles/${id}`,
+    DELETE: (id: string) => `${API_BASE_URL}/api/vehicles/${id}`,
+    ASSIGN: (id: string) => `${API_BASE_URL}/api/vehicles/${id}/assign`,
+    UNASSIGN: (id: string) => `${API_BASE_URL}/api/vehicles/${id}/unassign`,
   },
   RENTALS: {
     LIST: `${API_BASE_URL}/api/rentals`,
