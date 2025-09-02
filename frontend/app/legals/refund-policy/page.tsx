@@ -235,10 +235,10 @@ export default function RefundPolicyPage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-semibold text-slate-900">
-                                                Corrit Electric. PVT LTD
+                                                Corrit Electric.PVT.LTD
                                             </p>
                                             <p className="text-xs text-slate-500">
-                                                GST: 09AAQFCL4737M1ZZ
+                                                GST: 09AAFCL4737M1ZZ
                                             </p>
                                         </div>
                                     </div>
@@ -293,7 +293,7 @@ export default function RefundPolicyPage() {
                                         </p>
                                         <p className="flex items-start gap-2 text-sm text-slate-800">
                                             <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600" />
-                                            <span>+91921173970</span>
+                                            <span>+919211739780</span>
                                         </p>
                                     </div>
                                 </div>
