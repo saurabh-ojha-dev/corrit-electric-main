@@ -249,10 +249,10 @@ export default function TermsConditionsPage() {
                                 <div className="md:col-span-2">
                                     <div className="mb-4 flex items-center gap-3">
                                     <div className="bg-black rounded-xl p-2">
-                                            <Image src="/corrit_electric_logo_white.svg" alt="Corrint Electric" width={80} height={48} />
+                                            <Image src="/corrit_electric_logo_white.svg" alt="Corrit Electric" width={80} height={48} />
                                         </div>                                        <div>
                                             <p className="text-sm font-semibold text-slate-900">
-                                                Corrint Electric. PVT LTD
+                                                Corrit Electric. PVT LTD
                                             </p>
                                             <p className="text-xs text-slate-500">
                                                 GST: 09AAQFCL4737M1ZZ
@@ -301,7 +301,7 @@ export default function TermsConditionsPage() {
                                         </p>
                                         <p className="flex items-start gap-2 text-sm text-slate-800">
                                             <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600" />
-                                            <span>Ankitcornitelectric@gmail.com</span>
+                                            <span>Ankitcorritelectric@gmail.com</span>
                                         </p>
                                     </div>
                                     <div>
