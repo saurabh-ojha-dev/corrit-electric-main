@@ -92,6 +92,30 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
       href: '/admin/dashboard/payments',
       hasSubmenu: false
     },
+    {
+      id: 'legals',
+      label: 'Legals',
+      icon: FileText,
+      href: '/legals',
+      hasSubmenu: true,
+      submenu: [
+        {
+          id: 'privacy-policy',
+          label: 'Privacy and Policy',
+          href: '/legals/privacy-policy'
+        },
+        {
+          id: 'terms-conditions',
+          label: 'Terms and Conditions',
+          href: '/legals/terms-conditions'
+        },
+        {
+          id: 'refund-policy',
+          label: 'Refund Policy',
+          href: '/legals/refund-policy'
+        }
+      ]
+    },
     // Only show Admins option for Superadmin users
     ...(profile?.role === 'Superadmin' ? [{
       id: 'admins',
@@ -196,7 +220,7 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
                       : 'hover:bg-gray-50'
                       }`}
                     onClick={() => {
-                      router.push('/admin/legals/privacy-policy')
+                      router.push('/legals/privacy-policy')
                       setIsMobileMenuOpen(false)
                     }}
                   >
@@ -209,7 +233,7 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
                       : 'hover:bg-gray-50'
                       }`}
                     onClick={() => {
-                      router.push('/admin/legals/terms-conditions')
+                      router.push('/legals/terms-conditions')
                       setIsMobileMenuOpen(false)
                     }}
                   >
@@ -222,7 +246,7 @@ export default function Sidebar({ activePage = 'dashboard' }: SidebarProps) {
                       : 'hover:bg-gray-50'
                       }`}
                     onClick={() => {
-                      router.push('/admin/legals/refund-policy')
+                      router.push('/legals/refund-policy')
                       setIsMobileMenuOpen(false)
                     }}
                   >
