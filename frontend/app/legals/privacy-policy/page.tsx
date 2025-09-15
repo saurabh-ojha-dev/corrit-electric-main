@@ -83,7 +83,7 @@ export default function PrivacyPage() {
             <div className="w-full bg-slate-50 p-4">
                 <LegalsHeader
                     title="Privacy and Policy"
-                    description="We protect your privacy and ensure secure handling of your personal information for bike rental services."
+                    description="We collect minimal information for bike rentals, use secure PhonePe payments, and never sell your data."
                     color="bg-[#0063B0]"
                 />
             </div>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
                         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                             Privacy & Data Practices
                         </h1>
-                        <Badge label="Last updated: Sep 2025" />
+                        <Badge label="Last updated: 7/22/2025" />
                     </div>
 
                     {/* Quick Summary */}
@@ -153,8 +153,7 @@ export default function PrivacyPage() {
                                     </h3>
                                     <ul className="space-y-2 text-sm">
                                         <li>IP address</li>
-                                        <li>Browser type</li>
-                                        <li>Website usage data</li>
+                                        <li>Browser type when using our website</li>
                                     </ul>
                                 </div>
                             </div>
@@ -226,40 +225,32 @@ export default function PrivacyPage() {
                             </ul>
                         </SectionCard>
 
-                        {/* Contact Information */}
-                        <SectionCard title="Contact Information" icon={Building2}>
+                      {/* Contact Information */}
+                      <SectionCard title="Contact Information" icon={Building2}>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                 {/* Branding + Company details */}
                                 <div className="md:col-span-2">
                                     <div className="mb-4 flex items-center gap-3">
                                         <div className="bg-black rounded-xl p-2">
-                                            <Image src="/corrit_electric_logo_white.svg" alt="Corrit Electric" width={80} height={48} />
+                                            <Image src="/corrit_electric_logo_white.svg" alt="corrit-electric" width={80} height={48} />
                                         </div>
                                         <div>
                                             <p className="text-sm font-semibold text-slate-900">
-                                                Corrit Electric.PVT.LTD
+                                                CORRIT ELECTRIC PRIVATE LIMITED
                                             </p>
                                             <p className="text-xs text-slate-500">
-                                                GST: 09AAFCL4737M1ZZ
+                                                GST NO: 09AAICC6192J1Z6
                                             </p>
                                         </div>
                                     </div>
-                                    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        <div>
-                                            <dt className="text-xs uppercase tracking-wide text-slate-500">
-                                                Office
-                                            </dt>
-                                            <dd className="text-sm text-slate-800">
-                                                WeWork Berger Delhi One, C-001/A2
-                                            </dd>
-                                        </div>
+                                    <dl className="flex flex-row gap-3">                                    
                                         <div>
                                             <dt className="text-xs uppercase tracking-wide text-slate-500">
                                                 Address
                                             </dt>
                                             <dd className="flex items-start gap-2 text-sm text-slate-800">
-                                                <MapPin className="mt-0.5 h-4 w-4 text-sky-600" />
-                                                Sector 168, Noida, Uttar Pradesh 201301
+                                                <MapPin className="mt-0.5 h-4 w-4" style={{ color: '#2BB048' }} />
+                                                Plot no 117 , block B Udyog Kendra 2 , Ecotech 3, Greater noida, Uttar Pradesh 201306
                                             </dd>
                                         </div>
                                     </dl>
@@ -268,7 +259,7 @@ export default function PrivacyPage() {
                                 {/* Hours */}
                                 <div className="rounded-xl border border-slate-200 p-4">
                                     <div className="mb-3 flex items-center gap-2">
-                                        <Clock className="h-4 w-4 text-sky-600" />
+                                        <Clock className="h-4 w-4" style={{ color: '#2BB048' }} />
                                         <p className="text-sm font-semibold text-slate-900">
                                             Working Hours
                                         </p>
@@ -284,11 +275,11 @@ export default function PrivacyPage() {
                                             Email
                                         </p>
                                         <p className="flex items-start gap-2 text-sm text-slate-800">
-                                            <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600" />
-                                            <span>Ankitcorritelectric@gmail.com</span>
+                                            <Mail className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: '#2BB048' }} />
+                                            <span>Rishabh.sharma@corrirelectric.com</span>
                                         </p>
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <p className="text-xs uppercase tracking-wide text-slate-500">
                                             Phone
                                         </p>
@@ -296,7 +287,7 @@ export default function PrivacyPage() {
                                             <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600" />
                                             <span>+919211739780</span>
                                         </p>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </SectionCard>

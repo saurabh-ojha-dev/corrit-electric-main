@@ -20,17 +20,17 @@
 
 body {
   color: #000;
-  background: #212429 !important;
+  background: #ffffff !important;
   font-family: 'Roboto', sans-serif;
 }
 
 html {
-  background: #212429 !important;
+  background: #ffffff !important;
   font-family: 'Roboto', sans-serif;
 }
 
 #__next {
-  background: #212429 !important;
+  background: #ffffff !important;
 }
 
 @layer utilities {
