@@ -16,10 +16,12 @@ import {
     Calendar,
     MapPin as LocationIcon,
     UserCheck,
+    CreditCard,
     CreditCard as PaymentIcon,
     Settings,
     AlertCircle,
     XCircle,
+    DollarSign,
 } from "lucide-react";
 import LegalsHeader from "@/components/common/LegalsHeader";
 import Image from "next/image";
@@ -160,10 +162,14 @@ export default function TermsConditionsPage() {
                                     </ul>
                                 </div>
                             </div>
-                        </SectionCard>
 
-                        {/* Allowed & Prohibited Uses */}
-                        <SectionCard title="Allowed & Prohibited Uses" icon={ShieldCheck}>
+                            {/* Allowed & Prohibited Uses */}
+                            <div className="mb-4 flex items-center gap-2 mt-24">
+                                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
+                                    <ShieldCheck className="h-5 w-5" />
+                                </span>
+                                <h2 className="text-lg font-semibold text-slate-900">Allowed & Prohibited Uses</h2>
+                            </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div className="rounded-xl border border-green-200 bg-green-50 p-4">
                                     <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -189,6 +195,48 @@ export default function TermsConditionsPage() {
                                 </div>
                             </div>
                         </SectionCard>
+
+                        {/* Payment Policy */}
+                        <SectionCard title="Payment Policy" icon={PaymentIcon}>
+                            <div className="space-y-4">
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <DollarSign className="h-4 w-4 text-yellow-600" /> 1. Mandate Range
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        The payment mandate shall be set between ₹100 to ₹500, depending on the agreed terms.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <Calendar className="h-4 w-4 text-yellow-600" /> 2. Collection Frequency
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        The frequency of collection shall be flexible and determined as per the rider's feasibility (e.g., daily, weekly, or monthly).
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <CreditCard className="h-4 w-4 text-yellow-600" /> 3. Payment Mode
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        Collections shall be made through the approved digital or offline channels as mutually agreed.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <AlertTriangle className="h-4 w-4 text-yellow-600" /> 4. Default & Recovery
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        In case of delayed or missed payments, applicable measures will be initiated as per the standard recovery policy.
+                                    </p>
+                                </div>
+                            </div>
+                        </SectionCard>
+
 
                         {/* Liability */}
                         <SectionCard title="Liability" icon={AlertCircle}>
@@ -226,7 +274,7 @@ export default function TermsConditionsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <dl className="flex flex-row gap-3">                                    
+                                    <dl className="flex flex-row gap-3">
                                         <div>
                                             <dt className="text-xs uppercase tracking-wide text-slate-500">
                                                 Address

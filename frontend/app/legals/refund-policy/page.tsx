@@ -151,6 +151,46 @@ export default function RefundPolicyPage() {
                                 </div>
                             </div>
                         </SectionCard>
+                        {/* Payment Policy */}
+                        <SectionCard title="Payment Policy" icon={CreditCard}>
+                            <div className="space-y-4">
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <DollarSign className="h-4 w-4" style={{ color: '#2BB048' }} /> 1. Mandate Range
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        The payment mandate shall be set between ₹100 to ₹500, depending on the agreed terms.
+                                    </p>
+                                </div>
+                                
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <Calendar className="h-4 w-4" style={{ color: '#2BB048' }} /> 2. Collection Frequency
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        The frequency of collection shall be flexible and determined as per the rider's feasibility (e.g., daily, weekly, or monthly).
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <CreditCard className="h-4 w-4" style={{ color: '#2BB048' }} /> 3. Payment Mode
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        Collections shall be made through the approved digital or offline channels as mutually agreed.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 p-4">
+                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                        <AlertTriangle className="h-4 w-4" style={{ color: '#2BB048' }} /> 4. Default & Recovery
+                                    </h3>
+                                    <p className="text-sm text-slate-700">
+                                        In case of delayed or missed payments, applicable measures will be initiated as per the standard recovery policy.
+                                    </p>
+                                </div>
+                            </div>
+                        </SectionCard>
 
                         {/* Refund Process */}
                         <SectionCard title="Refund Process" icon={FileText}>
@@ -188,6 +228,8 @@ export default function RefundPolicyPage() {
                                 </div>
                             </div>
                         </SectionCard>
+
+                        
 
                         {/* Contact Information */}
                         <SectionCard title="Contact Information" icon={Building2}>
