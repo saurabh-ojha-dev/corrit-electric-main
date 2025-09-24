@@ -4,17 +4,33 @@ const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:5000';
   }
-  
+
   // Check for environment variable for production
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
+
   // Production fallback
   return 'https://corrit-electric-main.onrender.com';
 };
 
+const getPhonePeBaseUrl = () => {
+  // Check for environment variable first
+  if (process.env.NEXT_PUBLIC_PHONEPE_API_URL) {
+    return process.env.NEXT_PUBLIC_PHONEPE_API_URL;
+  }
+
+  // Development/Testing - use PhonePe Sandbox
+  if (process.env.NODE_ENV === 'development') {
+    return 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+  }
+
+  // Production - use PhonePe Production API
+  return 'https://api.phonepe.com/apis/pg';
+};
+
 export const API_BASE_URL = getApiBaseUrl();
+export const PHONEPE_BASE_URL = getPhonePeBaseUrl();
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -58,6 +74,29 @@ export const API_ENDPOINTS = {
     DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
     STATS: `${API_BASE_URL}/api/riders/stats/overview`,
   },
+  PHONEPE: {
+    // Authorization
+    AUTHORIZATION: `${PHONEPE_BASE_URL}/v1/oauth/token`,
+
+    // Subscription Management
+    SUBSCRIPTION_SETUP: `${PHONEPE_BASE_URL}/subscriptions/v2/setup`,
+    SUBSCRIPTION_ORDER_STATUS: (merchantOrderId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/order/${merchantOrderId}/status`,
+    SUBSCRIPTION_STATUS: (merchantSubscriptionId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/${merchantSubscriptionId}/status`,
+    SUBSCRIPTION_CANCEL: (merchantSubscriptionId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/${merchantSubscriptionId}/cancel`,
+
+    // Redemption Management
+    REDEMPTION_NOTIFY: `${PHONEPE_BASE_URL}/subscriptions/v2/notify`,
+    REDEMPTION_EXECUTE: `${PHONEPE_BASE_URL}/subscriptions/v2/redeem`,
+    REDEMPTION_ORDER_STATUS: (merchantOrderId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/order/${merchantOrderId}/status`,
+
+    // Refund Management
+    REFUND: `${PHONEPE_BASE_URL}/payments/v2/refund`,
+    REFUND_STATUS: (merchantRefundId: string) => `${PHONEPE_BASE_URL}/payments/v2/refund/${merchantRefundId}/status`,
+  },
+  AUTOPAY: {
+    LIST: `${API_BASE_URL}/api/payments`,
+    STATS: `${API_BASE_URL}/api/payments/stats`,
+  }
 }
 
 // Axios instance with default configuration
@@ -67,6 +106,14 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+  },
+})
+
+export const phonepeClient = axios.create({
+  baseURL: PHONEPE_BASE_URL,
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'X-VERIFY': '', // This will be set dynamically for each request
   },
 })
 

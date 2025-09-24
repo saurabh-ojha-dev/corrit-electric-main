@@ -42,7 +42,7 @@ const notificationSchema = new mongoose.Schema({
   },
   paymentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Payment',
+    ref: 'PhonePeAutopay',
     required: false
   },
   isRead: {

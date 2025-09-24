@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const riderRoutes = require('./routes/riders');
-const paymentRoutes = require('./routes/payments');
+const phonePeRoutes = require('./routes/phonepeAutopay');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
 const trackingRoutes = require('./routes/tracking');
@@ -48,7 +48,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/riders', riderRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/payments', phonePeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tracking', trackingRoutes);

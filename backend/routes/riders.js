@@ -4,7 +4,6 @@ const { auth } = require('../middleware/auth');
 const roleCheck = require('../middleware/roleCheck');
 const { body, validationResult } = require('express-validator');
 const Rider = require('../models/Rider');
-const Payment = require('../models/Payment');
 const Notification = require('../models/Notification');
 
 // Validation middleware - Updated to match frontend fields
