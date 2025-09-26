@@ -21,6 +21,8 @@ const Riders = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+    const [mandateStatusUpdates, setMandateStatusUpdates] = useState<Record<string, string>>({});
+    const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
     const router = useRouter();
 
     // Debounce search term
@@ -68,6 +70,38 @@ const Riders = () => {
         }
     };
 
+    // Check mandate status
+    const handleCheckStatus = async (riderId: string) => {
+        try {
+            setCheckingStatus(riderId);
+            const response = await apiClient.post(API_ENDPOINTS.RIDERS.CHECK_MANDATE(riderId));
+
+            if (response.data.success) {
+                // Update the rider status in the list
+                setRiders(prevRiders => 
+                    prevRiders.map(r => 
+                        r._id === riderId 
+                            ? { ...r, mandateStatus: response.data.mandateStatus }
+                            : r
+                    )
+                );
+                
+                toast.success(`Mandate status updated: ${response.data.mandateStatus}`);
+            } else {
+                toast.error(response.data.message || 'Failed to check mandate status');
+            }
+        } catch (error: any) {
+            console.error('Error checking mandate status:', error);
+            if (error.response?.status === 401) {
+                toast.error('Authentication required. Please login again.');
+            } else {
+                toast.error('Failed to check mandate status');
+            }
+        } finally {
+            setCheckingStatus(null);
+        }
+    };
+
     // Delete rider
     const handleDeleteRider = async (riderId: string) => {
         if (!confirm('Are you sure you want to delete this Rider? This action cannot be undone.')) {
@@ -109,6 +143,82 @@ const Riders = () => {
             window.removeEventListener('riderCreated', handleRiderCreated);
         };
     }, []);
+
+    // Real-time mandate status updates
+    useEffect(() => {
+        const handleMandateStatusUpdate = (event: CustomEvent) => {
+            const { riderId, mandateStatus } = event.detail;
+            setMandateStatusUpdates(prev => ({
+                ...prev,
+                [riderId]: mandateStatus
+            }));
+            
+            // Show notification for status change
+            if (mandateStatus === 'active') {
+                toast.success(`Mandate activated for rider ${riderId}`);
+            } else if (mandateStatus === 'failed') {
+                toast.error(`Mandate failed for rider ${riderId}`);
+            }
+        };
+
+        window.addEventListener('mandateStatusUpdate', handleMandateStatusUpdate as EventListener);
+        return () => {
+            window.removeEventListener('mandateStatusUpdate', handleMandateStatusUpdate as EventListener);
+        };
+    }, []);
+
+    // Poll for mandate status updates every 30 seconds
+    useEffect(() => {
+        const pollMandateStatus = async () => {
+            try {
+                // Only poll if there are riders with pending mandates
+                const pendingRiders = riders.filter(rider => 
+                    rider.mandateStatus === 'pending' || 
+                    rider.mandateStatus === 'PENDING'
+                );
+                
+                if (pendingRiders.length === 0) return;
+
+                // Check status for each pending rider
+                for (const rider of pendingRiders) {
+                    try {
+                        const response = await apiClient.get(API_ENDPOINTS.RIDERS.MANDATE_STATUS(rider._id));
+                        
+                        if (response.data.success && response.data.mandateStatus !== rider.mandateStatus) {
+                            // Status has changed, update the rider
+                            setRiders(prevRiders => 
+                                prevRiders.map(r => 
+                                    r._id === rider._id 
+                                        ? { ...r, mandateStatus: response.data.mandateStatus }
+                                        : r
+                                )
+                            );
+                            
+                            // Dispatch custom event
+                            window.dispatchEvent(new CustomEvent('mandateStatusUpdate', {
+                                detail: {
+                                    riderId: rider.riderId,
+                                    mandateStatus: response.data.mandateStatus
+                                }
+                            }));
+                        }
+                    } catch (error) {
+                        console.error(`Error checking status for rider ${rider.riderId}:`, error);
+                    }
+                }
+            } catch (error) {
+                console.error('Error polling mandate status:', error);
+            }
+        };
+
+        // Poll every 30 seconds
+        const interval = setInterval(pollMandateStatus, 30000);
+        
+        // Initial poll
+        pollMandateStatus();
+
+        return () => clearInterval(interval);
+    }, [riders]);
 
     // Fetch riders when component mounts or filters change
     useEffect(() => {
@@ -231,9 +341,14 @@ const Riders = () => {
         }
     };
 
-    const getMandateStatusBadge = (status: string) => {
-        switch (status) {
+    const getMandateStatusBadge = (rider: Rider) => {
+        const currentStatus = mandateStatusUpdates[rider.riderId] || rider.mandateStatus;
+        const isUpdating = mandateStatusUpdates[rider.riderId] && mandateStatusUpdates[rider.riderId] !== rider.mandateStatus;
+        
+        switch (currentStatus) {
             case 'active':
+            case 'ACTIVE':
+            case 'COMPLETED':
                 return (
                     <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <CheckCircle className="w-2.5 h-2.5 lg:w-3 lg:h-3 mr-1" />
@@ -241,6 +356,9 @@ const Riders = () => {
                     </span>
                 );
             case 'failed':
+            case 'FAILED':
+            case 'CANCELLED':
+            case 'REVOKED':
                 return (
                     <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         <XCircle className="w-2.5 h-2.5 lg:w-3 lg:h-3 mr-1" />
@@ -248,21 +366,41 @@ const Riders = () => {
                     </span>
                 );
             case 'revoked':
+            case 'REVOKED':
                 return (
                     <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         Revoked
                     </span>
                 );
             case 'pending':
+            case 'PENDING':
                 return (
                     <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        Pending
+                        {isUpdating ? (
+                            <>
+                                <Loader2 className="w-2.5 h-2.5 lg:w-3 lg:h-3 mr-1 animate-spin" />
+                                Updating...
+                            </>
+                        ) : (
+                            <>
+                                <Loader2 className="w-2.5 h-2.5 lg:w-3 lg:h-3 mr-1 animate-spin" />
+                                Pending
+                            </>
+                        )}
+                    </span>
+                );
+            case 'suspended':
+            case 'SUSPENDED':
+            case 'PAUSED':
+                return (
+                    <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        Suspended
                     </span>
                 );
             default:
                 return (
                     <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {status}
+                        {currentStatus}
                     </span>
                 );
         }
@@ -397,7 +535,7 @@ const Riders = () => {
                                                 </div>
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
-                                                {getMandateStatusBadge(rider.mandateStatus)}
+                                                {getMandateStatusBadge(rider)}
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
                                                 <span className="text-xs lg:text-sm font-medium text-gray-900">{rider.weeklyRentAmount}</span>
@@ -407,8 +545,19 @@ const Riders = () => {
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
                                                 <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">
-                                                    <button className="text-xs lg:text-sm text-[#2BB048] hover:text-blue-800">
-                                                        Check Status
+                                                    <button 
+                                                        onClick={() => handleCheckStatus(rider._id)}
+                                                        disabled={checkingStatus === rider._id}
+                                                        className="text-xs lg:text-sm text-[#2BB048] hover:text-blue-800 disabled:opacity-50"
+                                                    >
+                                                        {checkingStatus === rider._id ? (
+                                                            <>
+                                                                <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin inline mr-1" />
+                                                                Checking...
+                                                            </>
+                                                        ) : (
+                                                            'Check Status'
+                                                        )}
                                                     </button>
                                                     {rider.mandateStatus === 'active' && (
                                                         <button title='Cancel-mandate' type='button' className="text-xs lg:text-sm text-[#E51E25] hover:text-red-800">

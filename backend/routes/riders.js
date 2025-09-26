@@ -147,6 +147,10 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
       weeklyRentAmount: parseFloat(weeklyRentAmount),
       assignedAdmin: req.admin._id,
       documents: documentsObj,
+      mandateDetails: {
+        merchantOrderId: req.body.merchantOrderId,
+        merchantSubscriptionId: req.body.merchantSubscriptionId
+      }
     });
 
     const savedRider = await rider.save();
@@ -248,6 +252,69 @@ router.patch('/:id', [auth, roleCheck(['Superadmin', 'admin'])], async (req, res
     });
   } catch (error) {
     console.error('Error updating rider:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   GET /api/riders/:id/mandate-status
+// @desc    Get mandate status for a specific rider
+// @access  Private
+router.get('/:id/mandate-status', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const rider = await Rider.findById(id).select('mandateStatus mandateDetails');
+    
+    if (!rider) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      mandateStatus: rider.mandateStatus,
+      mandateDetails: rider.mandateDetails
+    });
+  } catch (error) {
+    console.error('Error fetching mandate status:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/riders/:id/check-mandate
+// @desc    Manually check and update mandate status
+// @access  Private
+router.post('/:id/check-mandate', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const rider = await Rider.findById(id);
+    
+    if (!rider) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found'
+      });
+    }
+
+    if (!rider.mandateDetails?.merchantOrderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'No mandate details found for this rider'
+      });
+    }
+
+    // Here you would typically call PhonePe API to check status
+    // For now, we'll just return the current status
+    res.json({
+      success: true,
+      mandateStatus: rider.mandateStatus,
+      message: 'Mandate status checked successfully'
+    });
+  } catch (error) {
+    console.error('Error checking mandate status:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

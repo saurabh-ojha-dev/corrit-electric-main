@@ -71,7 +71,7 @@ export interface Rider {
     upiId: string;
     address: string;
     weeklyRentAmount: number;
-    mandateStatus: 'pending' | 'active' | 'failed' | 'suspended';
+    mandateStatus: 'pending' | 'active' | 'failed' | 'suspended' | 'PENDING' | 'ACTIVE' | 'FAILED' | 'CANCELLED' | 'REVOKED' | 'COMPLETED';
     verificationStatus: 'pending' | 'approved' | 'rejected';
     documents: {
         aadhaar?: string;
@@ -83,6 +83,20 @@ export interface Rider {
     };
     assignedAdmin: string;
     isActive: boolean;
+    mandateDetails?: {
+        phonepeOrderId?: string;
+        phonepeSubscriptionId?: string;
+        merchantOrderId?: string;
+        merchantSubscriptionId?: string;
+        amount?: number;
+        maxAmount?: number;
+        frequency?: string;
+        authWorkflowType?: string;
+        amountType?: string;
+        errorCode?: string;
+        detailedErrorCode?: string;
+        failureReason?: string;
+    };
     createdAt: string;
     updatedAt: string;
 }

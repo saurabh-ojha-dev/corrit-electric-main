@@ -71,6 +71,8 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `${API_BASE_URL}/api/riders/${id}`,
     VERIFY: (id: string) => `${API_BASE_URL}/api/riders/${id}/verify`,
     MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate`,
+    MANDATE_STATUS: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate-status`,
+    CHECK_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/check-mandate`,
     DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
     STATS: `${API_BASE_URL}/api/riders/stats/overview`,
   },

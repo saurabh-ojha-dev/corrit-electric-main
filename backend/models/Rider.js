@@ -144,6 +144,45 @@ const riderSchema = new mongoose.Schema({
   },
   mandateExpiryDate: {
     type: Date
+  },
+  mandateDetails: {
+    phonepeOrderId: {
+      type: String
+    },
+    phonepeSubscriptionId: {
+      type: String
+    },
+    merchantOrderId: {
+      type: String
+    },
+    merchantSubscriptionId: {
+      type: String
+    },
+    amount: {
+      type: Number
+    },
+    maxAmount: {
+      type: Number
+    },
+    frequency: {
+      type: String,
+      enum: ['weekly', 'monthly', 'on_demand']
+    },
+    authWorkflowType: {
+      type: String
+    },
+    amountType: {
+      type: String
+    },
+    errorCode: {
+      type: String
+    },
+    detailedErrorCode: {
+      type: String
+    },
+    failureReason: {
+      type: String
+    }
   }
 }, {
   timestamps: true
