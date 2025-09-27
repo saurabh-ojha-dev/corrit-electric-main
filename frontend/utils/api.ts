@@ -15,10 +15,6 @@ const getApiBaseUrl = () => {
 };
 
 const getPhonePeBaseUrl = () => {
-  // Check for environment variable first
-  if (process.env.NEXT_PUBLIC_PHONEPE_API_URL) {
-    return process.env.NEXT_PUBLIC_PHONEPE_API_URL;
-  }
 
   // Development/Testing - use PhonePe Sandbox
   if (process.env.NODE_ENV === 'development') {
