@@ -1,153 +1,171 @@
-const express = require('express');
-const crypto = require('crypto');
+const express = require("express");
+const crypto = require("crypto");
 const router = express.Router();
-const Rider = require('../models/Rider');
-const PhonePeAutopay = require('../models/PhonePeAutopay');
-const Notification = require('../models/Notification');
+const Rider = require("../models/Rider");
+const PhonePeAutopay = require("../models/PhonePeAutopay");
+const Notification = require("../models/Notification");
 
 // Webhook validation middleware
 const validateWebhook = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('SHA256 ')) {
-      return res.status(401).json({ success: false, message: 'Invalid authorization header' });
+
+    if (!authHeader || !authHeader.startsWith("SHA256 ")) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid authorization header" });
     }
 
-    const receivedHash = authHeader.replace('SHA256 ', '');
-    
+    const receivedHash = authHeader.replace("SHA256 ", "");
+
     // Get webhook credentials from environment
     const webhookUsername = process.env.PHONEPE_WEBHOOK_USERNAME;
     const webhookPassword = process.env.PHONEPE_WEBHOOK_PASSWORD;
-    
+
     if (!webhookUsername || !webhookPassword) {
-      console.error('Webhook credentials not configured');
-      return res.status(500).json({ success: false, message: 'Webhook configuration error' });
+      console.error("Webhook credentials not configured");
+      return res
+        .status(500)
+        .json({ success: false, message: "Webhook configuration error" });
     }
 
     // Generate expected hash
-    const expectedHash = crypto.createHash('sha256')
+    const expectedHash = crypto
+      .createHash("sha256")
       .update(`${webhookUsername}:${webhookPassword}`)
-      .digest('hex');
+      .digest("hex");
 
     if (receivedHash !== expectedHash) {
-      console.error('Webhook authorization failed');
-      return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+      console.error("Webhook authorization failed");
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid webhook signature" });
     }
 
     next();
   } catch (error) {
-    console.error('Webhook validation error:', error);
-    res.status(500).json({ success: false, message: 'Webhook validation error' });
+    console.error("Webhook validation error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Webhook validation error" });
   }
 };
 
 // @route   POST /api/webhooks/phonepe
 // @desc    Handle PhonePe subscription webhooks
 // @access  Public (but validated)
-router.post('/phonepe', validateWebhook, async (req, res) => {
+router.post("/phonepe", async (req, res) => {
   try {
     const { event, payload } = req.body;
-    
-    console.log('Received PhonePe webhook:', { event, payload });
+
+    console.log("Received PhonePe webhook:", { event, payload });
 
     // Handle different webhook events
     switch (event) {
-      case 'subscription.setup.order.completed':
+      case "subscription.setup.order.completed":
         await handleSubscriptionSetupCompleted(payload);
         break;
-        
-      case 'subscription.setup.order.failed':
+
+      case "subscription.setup.order.failed":
         await handleSubscriptionSetupFailed(payload);
         break;
-        
-      case 'subscription.paused':
+
+      case "subscription.paused":
         await handleSubscriptionPaused(payload);
         break;
-        
-      case 'subscription.unpaused':
+
+      case "subscription.unpaused":
         await handleSubscriptionUnpaused(payload);
         break;
-        
-      case 'subscription.revoked':
+
+      case "subscription.revoked":
         await handleSubscriptionRevoked(payload);
         break;
-        
-      case 'subscription.cancelled':
+
+      case "subscription.cancelled":
         await handleSubscriptionCancelled(payload);
         break;
-        
-      case 'subscription.notification.completed':
+
+      case "subscription.notification.completed":
         await handleSubscriptionNotificationCompleted(payload);
         break;
-        
-      case 'subscription.notification.failed':
+
+      case "subscription.notification.failed":
         await handleSubscriptionNotificationFailed(payload);
         break;
-        
-      case 'subscription.redemption.order.completed':
+
+      case "subscription.redemption.order.completed":
         await handleRedemptionOrderCompleted(payload);
         break;
-        
-      case 'subscription.redemption.order.failed':
+
+      case "subscription.redemption.order.failed":
         await handleRedemptionOrderFailed(payload);
         break;
-        
-      case 'subscription.redemption.transaction.completed':
+
+      case "subscription.redemption.transaction.completed":
         await handleRedemptionTransactionCompleted(payload);
         break;
-        
-      case 'subscription.redemption.transaction.failed':
+
+      case "subscription.redemption.transaction.failed":
         await handleRedemptionTransactionFailed(payload);
         break;
-        
-      case 'pg.refund.accepted':
-      case 'pg.refund.completed':
-      case 'pg.refund.failed':
+
+      case "pg.refund.accepted":
+      case "pg.refund.completed":
+      case "pg.refund.failed":
         await handleRefundEvent(event, payload);
         break;
-        
+
       default:
-        console.log('Unhandled webhook event:', event);
+        console.log("Unhandled webhook event:", event);
     }
 
-    res.json({ success: true, message: 'Webhook processed successfully' });
+    res.json({ success: true, message: "Webhook processed successfully" });
   } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).json({ success: false, message: 'Webhook processing error' });
+    console.error("Error processing webhook:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Webhook processing error" });
   }
 });
 
 // Handle subscription setup completed
 async function handleSubscriptionSetupCompleted(payload) {
   try {
-    const { merchantOrderId, orderId, state, amount, paymentFlow, paymentDetails } = payload;
-    
+    const {
+      merchantOrderId,
+      orderId,
+      state,
+      amount,
+      paymentFlow,
+      paymentDetails,
+    } = payload;
+
     // Find rider by merchantOrderId
-    const rider = await Rider.findOne({ 
+    const rider = await Rider.findOne({
       $or: [
         { merchantOrderId },
-        { 'mandateDetails.merchantOrderId': merchantOrderId }
-      ]
+        { "mandateDetails.merchantOrderId": merchantOrderId },
+      ],
     });
 
     if (!rider) {
-      console.error('Rider not found for merchantOrderId:', merchantOrderId);
+      console.error("Rider not found for merchantOrderId:", merchantOrderId);
       return;
     }
 
     // Update rider mandate status
     await Rider.findByIdAndUpdate(rider._id, {
-      mandateStatus: 'active',
+      mandateStatus: "active",
       mandateCreatedAt: new Date(),
       mandateExpiryDate: new Date(paymentFlow.expireAt * 1000), // Convert from epoch
-      'mandateDetails.phonepeOrderId': orderId,
-      'mandateDetails.phonepeSubscriptionId': paymentFlow.subscriptionId,
-      'mandateDetails.amount': amount,
-      'mandateDetails.maxAmount': paymentFlow.maxAmount,
-      'mandateDetails.frequency': paymentFlow.frequency.toLowerCase(),
-      'mandateDetails.authWorkflowType': paymentFlow.authWorkflowType,
-      'mandateDetails.amountType': paymentFlow.amountType
+      "mandateDetails.phonepeOrderId": orderId,
+      "mandateDetails.phonepeSubscriptionId": paymentFlow.subscriptionId,
+      "mandateDetails.amount": amount,
+      "mandateDetails.maxAmount": paymentFlow.maxAmount,
+      "mandateDetails.frequency": paymentFlow.frequency.toLowerCase(),
+      "mandateDetails.authWorkflowType": paymentFlow.authWorkflowType,
+      "mandateDetails.amountType": paymentFlow.amountType,
     });
 
     // Create PhonePeAutopay record for successful mandate
@@ -157,8 +175,8 @@ async function handleSubscriptionSetupCompleted(payload) {
       merchantOrderId,
       merchantSubscriptionId: paymentFlow.merchantSubscriptionId,
       amount: amount,
-      status: 'success',
-      phonepeStatus: 'COMPLETED',
+      status: "success",
+      phonepeStatus: "COMPLETED",
       transactionId: paymentDetails?.[0]?.transactionId,
       orderId: orderId,
       utr: paymentDetails?.[0]?.rail?.utr,
@@ -168,31 +186,32 @@ async function handleSubscriptionSetupCompleted(payload) {
         startDate: new Date(),
         endDate: new Date(paymentFlow.expireAt * 1000),
         frequency: paymentFlow.frequency.toLowerCase(),
-        maxAmount: paymentFlow.maxAmount
+        maxAmount: paymentFlow.maxAmount,
       },
       phonepeResponse: payload,
       isRecurring: true,
       nextDebitDate: calculateNextDebitDate(paymentFlow.frequency),
       lastDebitDate: new Date(),
       totalDebits: 1,
-      totalAmount: amount
+      totalAmount: amount,
     });
 
     await autopayRecord.save();
 
     // Create notification
     await Notification.create({
-      type: 'mandate_activated',
+      type: "mandate_activated",
       title: `Mandate Activated – ${rider.riderId}`,
-      description: 'Rider has successfully set up autopay mandate. Weekly payments will be automatically deducted.',
+      description:
+        "Rider has successfully set up autopay mandate. Weekly payments will be automatically deducted.",
       riderId: rider._id,
-      priority: 'low',
-      actionRequired: false
+      priority: "low",
+      actionRequired: false,
     });
 
-    console.log('Subscription setup completed for rider:', rider.riderId);
+    console.log("Subscription setup completed for rider:", rider.riderId);
   } catch (error) {
-    console.error('Error handling subscription setup completed:', error);
+    console.error("Error handling subscription setup completed:", error);
   }
 }
 
@@ -200,41 +219,47 @@ async function handleSubscriptionSetupCompleted(payload) {
 async function handleSubscriptionSetupFailed(payload) {
   try {
     const { merchantOrderId, errorCode, detailedErrorCode } = payload;
-    
+
     // Find rider by merchantOrderId
-    const rider = await Rider.findOne({ 
+    const rider = await Rider.findOne({
       $or: [
         { merchantOrderId },
-        { 'mandateDetails.merchantOrderId': merchantOrderId }
-      ]
+        { "mandateDetails.merchantOrderId": merchantOrderId },
+      ],
     });
 
     if (!rider) {
-      console.error('Rider not found for merchantOrderId:', merchantOrderId);
+      console.error("Rider not found for merchantOrderId:", merchantOrderId);
       return;
     }
 
     // Update rider mandate status
     await Rider.findByIdAndUpdate(rider._id, {
-      mandateStatus: 'failed',
-      'mandateDetails.errorCode': errorCode,
-      'mandateDetails.detailedErrorCode': detailedErrorCode,
-      'mandateDetails.failureReason': getErrorMessage(errorCode, detailedErrorCode)
+      mandateStatus: "failed",
+      "mandateDetails.errorCode": errorCode,
+      "mandateDetails.detailedErrorCode": detailedErrorCode,
+      "mandateDetails.failureReason": getErrorMessage(
+        errorCode,
+        detailedErrorCode
+      ),
     });
 
     // Create notification
     await Notification.create({
-      type: 'mandate_failed',
+      type: "mandate_failed",
       title: `Mandate Setup Failed – ${rider.riderId}`,
-      description: `Rider mandate setup failed. Reason: ${getErrorMessage(errorCode, detailedErrorCode)}`,
+      description: `Rider mandate setup failed. Reason: ${getErrorMessage(
+        errorCode,
+        detailedErrorCode
+      )}`,
       riderId: rider._id,
-      priority: 'high',
-      actionRequired: true
+      priority: "high",
+      actionRequired: true,
     });
 
-    console.log('Subscription setup failed for rider:', rider.riderId);
+    console.log("Subscription setup failed for rider:", rider.riderId);
   } catch (error) {
-    console.error('Error handling subscription setup failed:', error);
+    console.error("Error handling subscription setup failed:", error);
   }
 }
 
@@ -242,27 +267,28 @@ async function handleSubscriptionSetupFailed(payload) {
 async function handleSubscriptionPaused(payload) {
   try {
     const { merchantSubscriptionId } = payload.paymentFlow;
-    
-    const rider = await Rider.findOne({ 
-      'mandateDetails.merchantSubscriptionId': merchantSubscriptionId 
+
+    const rider = await Rider.findOne({
+      "mandateDetails.merchantSubscriptionId": merchantSubscriptionId,
     });
 
     if (rider) {
       await Rider.findByIdAndUpdate(rider._id, {
-        mandateStatus: 'suspended'
+        mandateStatus: "suspended",
       });
 
       await Notification.create({
-        type: 'mandate_paused',
+        type: "mandate_paused",
         title: `Mandate Paused – ${rider.riderId}`,
-        description: 'Rider mandate has been paused. No automatic payments will be processed.',
+        description:
+          "Rider mandate has been paused. No automatic payments will be processed.",
         riderId: rider._id,
-        priority: 'medium',
-        actionRequired: false
+        priority: "medium",
+        actionRequired: false,
       });
     }
   } catch (error) {
-    console.error('Error handling subscription paused:', error);
+    console.error("Error handling subscription paused:", error);
   }
 }
 
@@ -270,27 +296,28 @@ async function handleSubscriptionPaused(payload) {
 async function handleSubscriptionUnpaused(payload) {
   try {
     const { merchantSubscriptionId } = payload.paymentFlow;
-    
-    const rider = await Rider.findOne({ 
-      'mandateDetails.merchantSubscriptionId': merchantSubscriptionId 
+
+    const rider = await Rider.findOne({
+      "mandateDetails.merchantSubscriptionId": merchantSubscriptionId,
     });
 
     if (rider) {
       await Rider.findByIdAndUpdate(rider._id, {
-        mandateStatus: 'active'
+        mandateStatus: "active",
       });
 
       await Notification.create({
-        type: 'mandate_resumed',
+        type: "mandate_resumed",
         title: `Mandate Resumed – ${rider.riderId}`,
-        description: 'Rider mandate has been resumed. Automatic payments will continue.',
+        description:
+          "Rider mandate has been resumed. Automatic payments will continue.",
         riderId: rider._id,
-        priority: 'low',
-        actionRequired: false
+        priority: "low",
+        actionRequired: false,
       });
     }
   } catch (error) {
-    console.error('Error handling subscription unpaused:', error);
+    console.error("Error handling subscription unpaused:", error);
   }
 }
 
@@ -298,27 +325,28 @@ async function handleSubscriptionUnpaused(payload) {
 async function handleSubscriptionRevoked(payload) {
   try {
     const { merchantSubscriptionId } = payload.paymentFlow;
-    
-    const rider = await Rider.findOne({ 
-      'mandateDetails.merchantSubscriptionId': merchantSubscriptionId 
+
+    const rider = await Rider.findOne({
+      "mandateDetails.merchantSubscriptionId": merchantSubscriptionId,
     });
 
     if (rider) {
       await Rider.findByIdAndUpdate(rider._id, {
-        mandateStatus: 'failed'
+        mandateStatus: "failed",
       });
 
       await Notification.create({
-        type: 'mandate_revoked',
+        type: "mandate_revoked",
         title: `Mandate Revoked – ${rider.riderId}`,
-        description: 'Rider mandate has been revoked. Manual payment setup required.',
+        description:
+          "Rider mandate has been revoked. Manual payment setup required.",
         riderId: rider._id,
-        priority: 'high',
-        actionRequired: true
+        priority: "high",
+        actionRequired: true,
       });
     }
   } catch (error) {
-    console.error('Error handling subscription revoked:', error);
+    console.error("Error handling subscription revoked:", error);
   }
 }
 
@@ -326,27 +354,28 @@ async function handleSubscriptionRevoked(payload) {
 async function handleSubscriptionCancelled(payload) {
   try {
     const { merchantSubscriptionId } = payload.paymentFlow;
-    
-    const rider = await Rider.findOne({ 
-      'mandateDetails.merchantSubscriptionId': merchantSubscriptionId 
+
+    const rider = await Rider.findOne({
+      "mandateDetails.merchantSubscriptionId": merchantSubscriptionId,
     });
 
     if (rider) {
       await Rider.findByIdAndUpdate(rider._id, {
-        mandateStatus: 'failed'
+        mandateStatus: "failed",
       });
 
       await Notification.create({
-        type: 'mandate_cancelled',
+        type: "mandate_cancelled",
         title: `Mandate Cancelled – ${rider.riderId}`,
-        description: 'Rider mandate has been cancelled. Manual payment setup required.',
+        description:
+          "Rider mandate has been cancelled. Manual payment setup required.",
         riderId: rider._id,
-        priority: 'high',
-        actionRequired: true
+        priority: "high",
+        actionRequired: true,
       });
     }
   } catch (error) {
-    console.error('Error handling subscription cancelled:', error);
+    console.error("Error handling subscription cancelled:", error);
   }
 }
 
@@ -354,67 +383,67 @@ async function handleSubscriptionCancelled(payload) {
 async function handleRedemptionOrderCompleted(payload) {
   try {
     const { merchantOrderId, amount, paymentDetails } = payload;
-    
+
     // Find and update autopay record
     const autopay = await PhonePeAutopay.findOne({ merchantOrderId });
     if (autopay) {
-      await autopay.updateStatus('success', {
-        phonepeStatus: 'COMPLETED',
+      await autopay.updateStatus("success", {
+        phonepeStatus: "COMPLETED",
         transactionId: paymentDetails?.[0]?.transactionId,
         utr: paymentDetails?.[0]?.rail?.utr,
-        webhookData: payload
+        webhookData: payload,
       });
     }
   } catch (error) {
-    console.error('Error handling redemption order completed:', error);
+    console.error("Error handling redemption order completed:", error);
   }
 }
 
 async function handleRedemptionOrderFailed(payload) {
   try {
     const { merchantOrderId, errorCode, detailedErrorCode } = payload;
-    
+
     const autopay = await PhonePeAutopay.findOne({ merchantOrderId });
     if (autopay) {
-      await autopay.updateStatus('failed', {
-        phonepeStatus: 'FAILED',
+      await autopay.updateStatus("failed", {
+        phonepeStatus: "FAILED",
         failureReason: getErrorMessage(errorCode, detailedErrorCode),
-        webhookData: payload
+        webhookData: payload,
       });
     }
   } catch (error) {
-    console.error('Error handling redemption order failed:', error);
+    console.error("Error handling redemption order failed:", error);
   }
 }
 
 // Handle notification events
 async function handleSubscriptionNotificationCompleted(payload) {
-  console.log('Subscription notification completed:', payload);
+  console.log("Subscription notification completed:", payload);
 }
 
 async function handleSubscriptionNotificationFailed(payload) {
-  console.log('Subscription notification failed:', payload);
+  console.log("Subscription notification failed:", payload);
 }
 
 async function handleRedemptionTransactionCompleted(payload) {
-  console.log('Redemption transaction completed:', payload);
+  console.log("Redemption transaction completed:", payload);
 }
 
 async function handleRedemptionTransactionFailed(payload) {
-  console.log('Redemption transaction failed:', payload);
+  console.log("Redemption transaction failed:", payload);
 }
 
 async function handleRefundEvent(event, payload) {
-  console.log('Refund event:', event, payload);
+  console.log("Refund event:", event, payload);
 }
 
 // Helper functions
 function calculateNextDebitDate(frequency) {
   const now = new Date();
   switch (frequency.toLowerCase()) {
-    case 'weekly':
+    case "weekly":
       return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    case 'monthly':
+    case "monthly":
       return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
     default:
       return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -423,45 +452,49 @@ function calculateNextDebitDate(frequency) {
 
 function getErrorMessage(errorCode, detailedErrorCode) {
   const errorMessages = {
-    'INVALID_MPIN': 'Invalid MPIN provided',
-    'INSUFFICIENT_BALANCE': 'Insufficient balance in account',
-    'USER_CANCELLED': 'User cancelled the transaction',
-    'TIMEOUT': 'Transaction timed out',
-    'NETWORK_ERROR': 'Network error occurred',
-    'INVALID_UPI_ID': 'Invalid UPI ID provided',
-    'BANK_ERROR': 'Bank server error'
+    INVALID_MPIN: "Invalid MPIN provided",
+    INSUFFICIENT_BALANCE: "Insufficient balance in account",
+    USER_CANCELLED: "User cancelled the transaction",
+    TIMEOUT: "Transaction timed out",
+    NETWORK_ERROR: "Network error occurred",
+    INVALID_UPI_ID: "Invalid UPI ID provided",
+    BANK_ERROR: "Bank server error",
   };
-  
-  return errorMessages[errorCode] || `Payment failed: ${errorCode} - ${detailedErrorCode}`;
+
+  return (
+    errorMessages[errorCode] ||
+    `Payment failed: ${errorCode} - ${detailedErrorCode}`
+  );
 }
 
 // @route   GET /api/webhooks/test
 // @desc    Test webhook endpoint
 // @access  Public
-router.get('/test', (req, res) => {
+router.get("/test", (req, res) => {
   res.json({
     success: true,
-    message: 'Webhook endpoint is working',
+    message: "Webhook endpoint is working",
     timestamp: new Date().toISOString(),
     endpoints: {
-      phonepe: '/api/webhooks/phonepe',
-      general: '/api/webhooks'
-    }
+      phonepe: "/api/webhooks/phonepe",
+      general: "/api/webhooks",
+    },
   });
 });
 
 // @route   POST /api/webhooks
 // @desc    Handle general web  hooks (legacy)
 // @access  Public
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     res.json({
       success: true,
-      message: 'Webhooks route - use /api/webhooks/phonepe for PhonePe webhooks'
+      message:
+        "Webhooks route - use /api/webhooks/phonepe for PhonePe webhooks",
     });
   } catch (error) {
-    console.error('Error handling webhook:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Error handling webhook:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
