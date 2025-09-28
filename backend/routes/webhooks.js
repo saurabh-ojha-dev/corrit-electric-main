@@ -353,7 +353,13 @@ async function handleSubscriptionRevoked(payload) {
 // Handle subscription cancelled
 async function handleSubscriptionCancelled(payload) {
   try {
-    const { merchantSubscriptionId } = payload.paymentFlow;
+    // Handle both old and new payload structures
+    const merchantSubscriptionId = payload.merchantSubscriptionId || payload.paymentFlow?.merchantSubscriptionId;
+    
+    if (!merchantSubscriptionId) {
+      console.error('No merchantSubscriptionId found in payload:', payload);
+      return;
+    }
 
     const rider = await Rider.findOne({
       "mandateDetails.merchantSubscriptionId": merchantSubscriptionId,
@@ -361,14 +367,16 @@ async function handleSubscriptionCancelled(payload) {
 
     if (rider) {
       await Rider.findByIdAndUpdate(rider._id, {
-        mandateStatus: "failed",
+        mandateStatus: "cancelled",
+        "mandateDetails.cancelledAt": new Date(),
+        "mandateDetails.cancellationReason": "Cancelled via PhonePe webhook"
       });
 
       await Notification.create({
         type: "mandate_cancelled",
         title: `Mandate Cancelled – ${rider.riderId}`,
         description:
-          "Rider mandate has been cancelled. Manual payment setup required.",
+          "Rider mandate has been cancelled via PhonePe webhook. No further automatic payments will be processed.",
         riderId: rider._id,
         priority: "high",
         actionRequired: true,

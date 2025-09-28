@@ -276,7 +276,8 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                 const errorMessage = error.response.data.message || 'Invalid data provided';
                 toast.error(errorMessage);
             } else if (error.response?.status === 409) {
-                toast.error('A Rider with this phone number or email already exists');
+                const errorMessage = error.response.data.message || 'A Rider with this information already exists';
+                toast.error(errorMessage);
             } else if (error.response?.status === 401) {
                 toast.error('Authentication required. Please login again.');
             } else if (error.response?.status === 403) {

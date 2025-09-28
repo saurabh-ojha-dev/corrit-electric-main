@@ -69,6 +69,9 @@ export const API_ENDPOINTS = {
     MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate`,
     MANDATE_STATUS: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate-status`,
     CHECK_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/check-mandate`,
+    CANCEL_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/cancel-mandate`,
+    TEST_CANCEL: `${API_BASE_URL}/api/riders/test-cancel`,
+    TEST_PHONEPE_AUTH: `${API_BASE_URL}/api/riders/test-phonepe-auth`,
     DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
     STATS: `${API_BASE_URL}/api/riders/stats/overview`,
   },
@@ -94,6 +97,17 @@ export const API_ENDPOINTS = {
   AUTOPAY: {
     LIST: `${API_BASE_URL}/api/payments`,
     STATS: `${API_BASE_URL}/api/payments/stats`,
+  },
+  NOTIFICATIONS: {
+    LIST: `${API_BASE_URL}/api/notifications`,
+    UNREAD_COUNT: `${API_BASE_URL}/api/notifications/unread-count`,
+    DASHBOARD: `${API_BASE_URL}/api/notifications/dashboard`,
+    MARK_READ: (id: string) => `${API_BASE_URL}/api/notifications/${id}/read`,
+    MARK_UNREAD: (id: string) => `${API_BASE_URL}/api/notifications/${id}/unread`,
+    MARK_ALL_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
+    DELETE: (id: string) => `${API_BASE_URL}/api/notifications/${id}`,
+    TYPES: `${API_BASE_URL}/api/notifications/types`,
+    CREATE_TEST: `${API_BASE_URL}/api/notifications/create-test`,
   }
 }
 

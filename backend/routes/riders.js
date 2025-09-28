@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { auth } = require('../middleware/auth');
 const roleCheck = require('../middleware/roleCheck');
 const { body, validationResult } = require('express-validator');
 const Rider = require('../models/Rider');
 const Notification = require('../models/Notification');
+const PhonePeAutopay = require('../models/PhonePeAutopay');
 
 // Validation middleware - Updated to match frontend fields
 const validateRider = [
@@ -110,15 +112,28 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
       status
     } = req.body;
 
-    // Check for existing rider
-    const existingRider = await Rider.findOne({
-      $or: [{ email }, { phone }, { upiId }]
-    });
-
-    if (existingRider) {
+    // Check for existing rider with specific field validation
+    const existingEmail = await Rider.findOne({ email });
+    if (existingEmail) {
       return res.status(409).json({
         success: false,
-        message: 'Rider with this email, phone, or UPI ID already exists'
+        message: 'A rider with this email address already exists'
+      });
+    }
+
+    const existingPhone = await Rider.findOne({ phone });
+    if (existingPhone) {
+      return res.status(409).json({
+        success: false,
+        message: 'A rider with this phone number already exists'
+      });
+    }
+
+    const existingUpiId = await Rider.findOne({ upiId });
+    if (existingUpiId) {
+      return res.status(409).json({
+        success: false,
+        message: 'A rider with this UPI ID already exists'
       });
     }
 
@@ -316,6 +331,416 @@ router.post('/:id/check-mandate', auth, async (req, res) => {
   } catch (error) {
     console.error('Error checking mandate status:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/riders/:id/cancel-mandate
+// @desc    Cancel PhonePe mandate for a rider
+// @access  Private
+router.post('/:id/cancel-mandate', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid rider ID'
+      });
+    }
+
+    // Find the rider
+    const rider = await Rider.findById(id);
+    
+    if (!rider) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found'
+      });
+    }
+
+    // Check if rider has active mandate
+    if (rider.mandateStatus !== 'active' && rider.mandateStatus !== 'ACTIVE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Rider does not have an active mandate to cancel'
+      });
+    }
+
+    if (!rider.mandateDetails?.merchantSubscriptionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'No subscription ID found for this rider'
+      });
+    }
+
+    // Check if PhonePe credentials are configured (try both naming conventions)
+    const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
+    const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
+    const clientVersion = process.env.PHONEPE_CLIENT_VERSION || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION || '1.0';
+    const grantType = process.env.PHONEPE_GRANT_TYPE || process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE || 'client_credentials';
+    
+    if (!clientId || !clientSecret) {
+      console.log('PhonePe credentials not configured, cancelling mandate locally only');
+      console.log('Available env vars:', {
+        PHONEPE_CLIENT_ID: !!process.env.PHONEPE_CLIENT_ID,
+        PHONEPE_CLIENT_SECRET: !!process.env.PHONEPE_CLIENT_SECRET,
+        NEXT_PUBLIC_PHONEPE_CLIENT_ID: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
+        NEXT_PUBLIC_PHONEPE_CLIENT_SECRET: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET
+      });
+      
+      // Update rider mandate status to cancelled locally
+      await Rider.findByIdAndUpdate(id, {
+        mandateStatus: 'cancelled',
+        'mandateDetails.cancelledAt': new Date(),
+        'mandateDetails.cancellationReason': 'Admin cancelled via dashboard (PhonePe not configured)'
+      });
+
+      // Create notification for mandate cancellation
+      await Notification.create({
+        type: 'mandate_cancelled',
+        title: `Mandate Cancelled – ${rider.riderId}`,
+        description: 'Rider mandate has been cancelled by admin. No further automatic payments will be processed.',
+        riderId: rider._id,
+        priority: 'medium',
+        actionRequired: false,
+        metadata: {
+          riderName: rider.name,
+          riderId: rider.riderId,
+          cancelledAt: new Date(),
+          cancelledBy: req.admin._id
+        }
+      });
+
+      return res.json({
+        success: true,
+        message: 'Mandate cancelled locally (PhonePe not configured)',
+        warning: 'PhonePe credentials not configured, mandate cancelled in local system only'
+      });
+    }
+
+    // Call PhonePe API to cancel subscription
+    const axios = require('axios');
+    
+    let authResponse;
+    try {
+      console.log('PhonePe Auth Request:', {
+        url: process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token',
+        client_id: clientId,
+        client_version: clientVersion,
+        grant_type: grantType,
+        has_secret: !!clientSecret
+      });
+
+      // Get PhonePe access token first
+      const authData = new URLSearchParams();
+      authData.append('client_id', clientId);
+      authData.append('client_version', clientVersion);
+      authData.append('client_secret', clientSecret);
+      authData.append('grant_type', grantType);
+
+      authResponse = await axios.post(process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token', authData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      console.log('PhonePe Auth Response Status:', authResponse.status);
+      console.log('PhonePe Auth Response Data:', authResponse.data);
+
+      if (!authResponse.data.access_token) {
+        console.error('PhonePe auth failed - no access token:', authResponse.data);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to get PhonePe access token',
+          authResponse: authResponse.data
+        });
+      }
+
+      console.log('PhonePe access token obtained successfully');
+    } catch (authError) {
+      console.error('PhonePe authentication error:', authError.response?.data || authError.message);
+      
+      // Fallback: cancel locally even if PhonePe auth fails
+      await Rider.findByIdAndUpdate(id, {
+        mandateStatus: 'cancelled',
+        'mandateDetails.cancelledAt': new Date(),
+        'mandateDetails.cancellationReason': 'Admin cancelled via dashboard (PhonePe auth failed)',
+        'mandateDetails.phonepeError': authError.response?.data?.message || authError.message
+      });
+
+      return res.json({
+        success: true,
+        message: 'Mandate cancelled locally (PhonePe authentication failed)',
+        warning: 'PhonePe authentication failed, but mandate has been cancelled in our system'
+      });
+    }
+
+    // Cancel subscription using PhonePe API
+    const phonepeBaseUrl = process.env.NODE_ENV === 'development' 
+      ? 'https://api-preprod.phonepe.com/apis/pg-sandbox'
+      : 'https://api.phonepe.com/apis/pg';
+    
+    try {
+      console.log('Attempting to cancel PhonePe subscription:', rider.mandateDetails.merchantSubscriptionId);
+      
+      const cancelResponse = await axios.post(
+        `${phonepeBaseUrl}/subscriptions/v2/${rider.mandateDetails.merchantSubscriptionId}/cancel`,
+        {},
+        {
+          headers: {
+            'Authorization': `O-Bearer ${authResponse.data.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('PhonePe cancel response status:', cancelResponse.status);
+      
+      // PhonePe returns 204 No Content for successful cancellation
+      if (cancelResponse.status === 204) {
+        console.log('PhonePe subscription cancelled successfully (204 No Content)');
+      } else {
+        console.log('PhonePe cancel response data:', cancelResponse.data);
+      }
+
+      // Update rider mandate status to cancelled
+      await Rider.findByIdAndUpdate(id, {
+        mandateStatus: 'cancelled',
+        'mandateDetails.cancelledAt': new Date(),
+        'mandateDetails.cancellationReason': 'Admin cancelled via dashboard'
+      });
+
+      // Create notification for mandate cancellation
+      await Notification.create({
+        type: 'mandate_cancelled',
+        title: `Mandate Cancelled – ${rider.riderId}`,
+        description: 'Rider mandate has been cancelled by admin. No further automatic payments will be processed.',
+        riderId: rider._id,
+        priority: 'medium',
+        actionRequired: false,
+        metadata: {
+          riderName: rider.name,
+          riderId: rider.riderId,
+          cancelledAt: new Date(),
+          cancelledBy: req.admin._id
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Mandate cancelled successfully with PhonePe',
+        phonepeStatus: cancelResponse.status,
+        phonepeResponse: cancelResponse.status === 204 ? 'Subscription cancelled (204 No Content)' : cancelResponse.data
+      });
+    } catch (phonepeError) {
+      console.error('PhonePe cancel error:', phonepeError.response?.data || phonepeError.message);
+      
+      // If PhonePe API fails, still update our database
+      await Rider.findByIdAndUpdate(id, {
+        mandateStatus: 'cancelled',
+        'mandateDetails.cancelledAt': new Date(),
+        'mandateDetails.cancellationReason': 'Admin cancelled via dashboard (PhonePe API failed)',
+        'mandateDetails.phonepeError': phonepeError.response?.data?.message || phonepeError.message
+      });
+
+      // Create notification even if PhonePe fails
+      await Notification.create({
+        type: 'mandate_cancelled',
+        title: `Mandate Cancelled – ${rider.riderId}`,
+        description: 'Rider mandate has been cancelled by admin (PhonePe API failed, but cancelled locally).',
+        riderId: rider._id,
+        priority: 'medium',
+        actionRequired: false,
+        metadata: {
+          riderName: rider.name,
+          riderId: rider.riderId,
+          cancelledAt: new Date(),
+          cancelledBy: req.admin._id,
+          phonepeError: phonepeError.response?.data?.message || phonepeError.message
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Mandate cancelled locally (PhonePe API error, but mandate marked as cancelled)',
+        warning: 'PhonePe API call failed, but mandate has been cancelled in our system'
+      });
+    }
+  } catch (error) {
+    console.error('Error cancelling mandate:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error: ' + error.message 
+    });
+  }
+});
+
+// @route   DELETE /api/riders/:id
+// @desc    Delete a rider
+// @access  Private
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid rider ID'
+      });
+    }
+
+    // Find the rider
+    const rider = await Rider.findById(id);
+    
+    if (!rider) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found'
+      });
+    }
+
+    // Check if rider has active mandate
+    if (rider.mandateStatus === 'active' || rider.mandateStatus === 'ACTIVE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete rider with active mandate. Please cancel the mandate first.'
+      });
+    }
+
+    // Delete associated data first
+    try {
+      // Delete associated PhonePe autopay records
+      await PhonePeAutopay.deleteMany({ riderId: id });
+      
+      // Delete associated notifications
+      await Notification.deleteMany({ riderId: id });
+      
+      // Delete associated vehicles (if any)
+      const Vehicle = require('../models/Vehicle');
+      await Vehicle.updateMany(
+        { riderId: id },
+        { $unset: { riderId: 1 } }
+      );
+    } catch (cleanupError) {
+      console.error('Error cleaning up associated data:', cleanupError);
+      // Continue with deletion even if cleanup fails
+    }
+
+    // Delete the rider
+    await Rider.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: 'Rider deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting rider:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error: ' + error.message 
+    });
+  }
+});
+
+// @route   POST /api/riders/test-cancel
+// @desc    Test cancel mandate endpoint
+// @access  Private
+router.post('/test-cancel', auth, async (req, res) => {
+  try {
+    const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
+    const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
+    
+    res.json({
+      success: true,
+      message: 'Cancel mandate endpoint is working',
+      phonepeConfigured: !!(clientId && clientSecret),
+      environment: process.env.NODE_ENV,
+      credentials: {
+        clientId: clientId ? 'Set' : 'Not set',
+        clientSecret: clientSecret ? 'Set' : 'Not set',
+        authUrl: process.env.PHONEPE_AUTH_URL || 'Using default'
+      }
+    });
+  } catch (error) {
+    console.error('Error testing cancel mandate:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error: ' + error.message 
+    });
+  }
+});
+
+// @route   POST /api/riders/test-phonepe-auth
+// @desc    Test PhonePe authentication
+// @access  Private
+router.post('/test-phonepe-auth', auth, async (req, res) => {
+  try {
+    const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
+    const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
+    const clientVersion = process.env.PHONEPE_CLIENT_VERSION || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION || '1.0';
+    const grantType = process.env.PHONEPE_GRANT_TYPE || process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE || 'client_credentials';
+    
+    console.log('Testing PhonePe credentials:', {
+      clientId: clientId ? 'Set' : 'Not set',
+      clientSecret: clientSecret ? 'Set' : 'Not set',
+      clientVersion,
+      grantType,
+      authUrl: process.env.PHONEPE_AUTH_URL || 'Using default'
+    });
+    
+    if (!clientId || !clientSecret) {
+      return res.json({
+        success: false,
+        message: 'PhonePe credentials not configured',
+        credentials: {
+          clientId: clientId ? 'Set' : 'Not set',
+          clientSecret: clientSecret ? 'Set' : 'Not set',
+          envVars: {
+            PHONEPE_CLIENT_ID: !!process.env.PHONEPE_CLIENT_ID,
+            PHONEPE_CLIENT_SECRET: !!process.env.PHONEPE_CLIENT_SECRET,
+            NEXT_PUBLIC_PHONEPE_CLIENT_ID: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
+            NEXT_PUBLIC_PHONEPE_CLIENT_SECRET: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET
+          }
+        }
+      });
+    }
+
+    const axios = require('axios');
+    console.log('Making PhonePe auth request...');
+    
+    const authData = new URLSearchParams();
+    authData.append('client_id', clientId);
+    authData.append('client_version', clientVersion);
+    authData.append('client_secret', clientSecret);
+    authData.append('grant_type', grantType);
+    
+    const authResponse = await axios.post(process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token', authData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    console.log('PhonePe auth response:', authResponse.status, authResponse.data);
+
+    res.json({
+      success: true,
+      message: 'PhonePe authentication successful',
+      hasToken: !!authResponse.data.access_token,
+      tokenType: authResponse.data.token_type,
+      expiresIn: authResponse.data.expires_in,
+      fullResponse: authResponse.data
+    });
+  } catch (error) {
+    console.error('PhonePe auth test error:', error.response?.data || error.message);
+    res.json({
+      success: false,
+      message: 'PhonePe authentication failed',
+      error: error.response?.data || error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText
+    });
   }
 });
 

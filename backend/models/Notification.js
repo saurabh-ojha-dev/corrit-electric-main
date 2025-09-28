@@ -7,6 +7,7 @@ const notificationSchema = new mongoose.Schema({
       'payment_failed',
       'mandate_expired', 
       'mandate_expiring',
+      'mandate_cancelled',
       'location_alert',
       'gps_signal_lost',
       'system_alert',
@@ -16,7 +17,8 @@ const notificationSchema = new mongoose.Schema({
       'payment_success',
       'payment_retry',
       'mandate_created',
-      'mandate_failed'
+      'mandate_failed',
+      'mandate_activated'
     ],
     required: true
   },

@@ -71,7 +71,7 @@ export interface Rider {
     upiId: string;
     address: string;
     weeklyRentAmount: number;
-    mandateStatus: 'pending' | 'active' | 'failed' | 'suspended' | 'PENDING' | 'ACTIVE' | 'FAILED' | 'CANCELLED' | 'REVOKED' | 'COMPLETED';
+    mandateStatus: 'pending' | 'active' | 'failed' | 'suspended' | 'cancelled' | 'PENDING' | 'ACTIVE' | 'FAILED' | 'CANCELLED' | 'REVOKED' | 'COMPLETED';
     verificationStatus: 'pending' | 'approved' | 'rejected';
     documents: {
         aadhaar?: string;
@@ -121,4 +121,43 @@ export interface Vehicle {
     name: string;
     riderId: string;
   };
+}
+
+export interface Notification {
+  _id: string;
+  type: string;
+  title: string;
+  description: string;
+  riderId?: {
+    _id: string;
+    name: string;
+    riderId: string;
+  };
+  adminId?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  isRead: boolean;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  actionRequired: boolean;
+  actionType: string;
+  actionLink?: string;
+  actionData?: any;
+  metadata?: {
+    amount?: number;
+    riderName?: string;
+    riderId?: string;
+    location?: {
+      latitude: number;
+      longitude: number;
+      address: string;
+    };
+    timestamp?: string;
+    deviceInfo?: string;
+    errorCode?: string;
+    retryCount?: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }

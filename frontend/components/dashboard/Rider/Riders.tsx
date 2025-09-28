@@ -23,6 +23,7 @@ const Riders = () => {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [mandateStatusUpdates, setMandateStatusUpdates] = useState<Record<string, string>>({});
     const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
+    const [cancellingMandate, setCancellingMandate] = useState<string | null>(null);
     const router = useRouter();
 
     // Debounce search term
@@ -102,6 +103,50 @@ const Riders = () => {
         }
     };
 
+    // Cancel mandate
+    const handleCancelMandate = async (riderId: string) => {
+        if (!confirm('Are you sure you want to cancel this mandate? This will stop all future automatic payments for this rider.')) {
+            return;
+        }
+
+        try {
+            setCancellingMandate(riderId);
+            const response = await apiClient.post(API_ENDPOINTS.RIDERS.CANCEL_MANDATE(riderId));
+
+            if (response.data.success) {
+                // Update the rider status in the list
+                setRiders(prevRiders => 
+                    prevRiders.map(r => 
+                        r._id === riderId 
+                            ? { ...r, mandateStatus: 'cancelled' }
+                            : r
+                    )
+                );
+                
+                toast.success('Mandate cancelled successfully');
+                
+                // Show warning if PhonePe API failed
+                if (response.data.warning) {
+                    toast.error(response.data.warning);
+                }
+            } else {
+                toast.error(response.data.message || 'Failed to cancel mandate');
+            }
+        } catch (error: any) {
+            console.error('Error cancelling mandate:', error);
+            if (error.response?.status === 401) {
+                toast.error('Authentication required. Please login again.');
+            } else if (error.response?.status === 400) {
+                const errorMessage = error.response?.data?.message || 'Invalid request';
+                toast.error(errorMessage);
+            } else {
+                toast.error('Failed to cancel mandate');
+            }
+        } finally {
+            setCancellingMandate(null);
+        }
+    };
+
     // Delete rider
     const handleDeleteRider = async (riderId: string) => {
         if (!confirm('Are you sure you want to delete this Rider? This action cannot be undone.')) {
@@ -124,8 +169,16 @@ const Riders = () => {
                 toast.error('Authentication required. Please login again.');
             } else if (error.response?.status === 403) {
                 toast.error('You do not have permission to delete Riders');
+            } else if (error.response?.status === 400) {
+                // Show the specific backend error message for 400 status
+                const errorMessage = error.response?.data?.message || 'Invalid request';
+                toast.error(errorMessage);
+            } else if (error.response?.status === 404) {
+                toast.error('Rider not found');
             } else {
-                toast.error('Failed to delete Rider');
+                // For other errors, try to get the backend message or show generic message
+                const errorMessage = error.response?.data?.message || 'Failed to delete Rider';
+                toast.error(errorMessage);
             }
         } finally {
             setIsDeleting(null);
@@ -372,6 +425,13 @@ const Riders = () => {
                         Revoked
                     </span>
                 );
+            case 'cancelled':
+            case 'CANCELLED':
+                return (
+                    <span className="inline-flex items-center px-2 lg:px-3.5 py-1.5 lg:py-2.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Cancelled
+                    </span>
+                );
             case 'pending':
             case 'PENDING':
                 return (
@@ -475,6 +535,7 @@ const Riders = () => {
                                             <option value="" className="py-2 px-3">All Status</option>
                                             <option value="active" className="py-2 px-3">🟢 Active</option>
                                             <option value="failed" className="py-2 px-3">🔴 Failed</option>
+                                            <option value="cancelled" className="py-2 px-3">⚫ Cancelled</option>
                                             <option value="revoked" className="py-2 px-3">⚪ Revoked</option>
                                             <option value="pending" className="py-2 px-3">⚪ Pending</option>
                                         </select>
@@ -560,8 +621,21 @@ const Riders = () => {
                                                         )}
                                                     </button>
                                                     {rider.mandateStatus === 'active' && (
-                                                        <button title='Cancel-mandate' type='button' className="text-xs lg:text-sm text-[#E51E25] hover:text-red-800">
-                                                            Cancel Mandate
+                                                        <button 
+                                                            title='Cancel-mandate' 
+                                                            type='button' 
+                                                            onClick={() => handleCancelMandate(rider._id)}
+                                                            disabled={cancellingMandate === rider._id}
+                                                            className="text-xs lg:text-sm text-[#E51E25] hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            {cancellingMandate === rider._id ? (
+                                                                <>
+                                                                    <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin inline mr-1" />
+                                                                    Cancelling...
+                                                                </>
+                                                            ) : (
+                                                                'Cancel Mandate'
+                                                            )}
                                                         </button>
                                                     )}
                                                     <button
