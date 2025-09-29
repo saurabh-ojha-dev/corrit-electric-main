@@ -193,7 +193,7 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
   } catch (error) {
     console.error('Error creating rider:', error);
     console.error('Error stack:', error.stack);
-    
+
     // Handle specific MongoDB errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
@@ -202,7 +202,7 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
         message: `Rider with this ${field} already exists`
       });
     }
-    
+
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
 });
@@ -240,7 +240,7 @@ router.patch('/:id', [auth, roleCheck(['Superadmin', 'admin'])], async (req, res
     // Create notification for status change
     try {
       const notificationType = verificationStatus === 'approved' ? 'rider_approved' : 'rider_rejected';
-      const notificationTitle = verificationStatus === 'approved' 
+      const notificationTitle = verificationStatus === 'approved'
         ? `Rider Approved – ${rider.riderId}`
         : `Rider Rejected – ${rider.riderId}`;
       const notificationDescription = verificationStatus === 'approved'
@@ -277,9 +277,9 @@ router.patch('/:id', [auth, roleCheck(['Superadmin', 'admin'])], async (req, res
 router.get('/:id/mandate-status', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const rider = await Rider.findById(id).select('mandateStatus mandateDetails');
-    
+
     if (!rider) {
       return res.status(404).json({
         success: false,
@@ -304,9 +304,9 @@ router.get('/:id/mandate-status', auth, async (req, res) => {
 router.post('/:id/check-mandate', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const rider = await Rider.findById(id);
-    
+
     if (!rider) {
       return res.status(404).json({
         success: false,
@@ -340,7 +340,7 @@ router.post('/:id/check-mandate', auth, async (req, res) => {
 router.post('/:id/cancel-mandate', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -351,7 +351,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
 
     // Find the rider
     const rider = await Rider.findById(id);
-    
+
     if (!rider) {
       return res.status(404).json({
         success: false,
@@ -379,7 +379,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
     const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
     const clientVersion = process.env.PHONEPE_CLIENT_VERSION || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION || '1.0';
     const grantType = process.env.PHONEPE_GRANT_TYPE || process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE || 'client_credentials';
-    
+
     if (!clientId || !clientSecret) {
       console.log('PhonePe credentials not configured, cancelling mandate locally only');
       console.log('Available env vars:', {
@@ -388,7 +388,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
         NEXT_PUBLIC_PHONEPE_CLIENT_ID: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
         NEXT_PUBLIC_PHONEPE_CLIENT_SECRET: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET
       });
-      
+
       // Update rider mandate status to cancelled locally
       await Rider.findByIdAndUpdate(id, {
         mandateStatus: 'cancelled',
@@ -421,7 +421,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
 
     // Call PhonePe API to cancel subscription
     const axios = require('axios');
-    
+
     let authResponse;
     try {
       console.log('PhonePe Auth Request:', {
@@ -460,7 +460,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
       console.log('PhonePe access token obtained successfully');
     } catch (authError) {
       console.error('PhonePe authentication error:', authError.response?.data || authError.message);
-      
+
       // Fallback: cancel locally even if PhonePe auth fails
       await Rider.findByIdAndUpdate(id, {
         mandateStatus: 'cancelled',
@@ -477,13 +477,13 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
     }
 
     // Cancel subscription using PhonePe API
-    const phonepeBaseUrl = process.env.NODE_ENV === 'development' 
+    const phonepeBaseUrl = process.env.NODE_ENV === 'development'
       ? 'https://api-preprod.phonepe.com/apis/pg-sandbox'
       : 'https://api.phonepe.com/apis/pg';
-    
+
     try {
       console.log('Attempting to cancel PhonePe subscription:', rider.mandateDetails.merchantSubscriptionId);
-      
+
       const cancelResponse = await axios.post(
         `${phonepeBaseUrl}/subscriptions/v2/${rider.mandateDetails.merchantSubscriptionId}/cancel`,
         {},
@@ -496,7 +496,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
       );
 
       console.log('PhonePe cancel response status:', cancelResponse.status);
-      
+
       // PhonePe returns 204 No Content for successful cancellation
       if (cancelResponse.status === 204) {
         console.log('PhonePe subscription cancelled successfully (204 No Content)');
@@ -535,7 +535,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
       });
     } catch (phonepeError) {
       console.error('PhonePe cancel error:', phonepeError.response?.data || phonepeError.message);
-      
+
       // If PhonePe API fails, still update our database
       await Rider.findByIdAndUpdate(id, {
         mandateStatus: 'cancelled',
@@ -569,9 +569,9 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
     }
   } catch (error) {
     console.error('Error cancelling mandate:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error: ' + error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Server error: ' + error.message
     });
   }
 });
@@ -582,7 +582,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -593,7 +593,7 @@ router.delete('/:id', auth, async (req, res) => {
 
     // Find the rider
     const rider = await Rider.findById(id);
-    
+
     if (!rider) {
       return res.status(404).json({
         success: false,
@@ -613,10 +613,10 @@ router.delete('/:id', auth, async (req, res) => {
     try {
       // Delete associated PhonePe autopay records
       await PhonePeAutopay.deleteMany({ riderId: id });
-      
+
       // Delete associated notifications
       await Notification.deleteMany({ riderId: id });
-      
+
       // Delete associated vehicles (if any)
       const Vehicle = require('../models/Vehicle');
       await Vehicle.updateMany(
@@ -637,86 +637,52 @@ router.delete('/:id', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting rider:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error: ' + error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Server error: ' + error.message
     });
   }
 });
 
-// @route   POST /api/riders/test-cancel
-// @desc    Test cancel mandate endpoint
-// @access  Private
-router.post('/test-cancel', auth, async (req, res) => {
-  try {
-    const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
-    const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
-    
-    res.json({
-      success: true,
-      message: 'Cancel mandate endpoint is working',
-      phonepeConfigured: !!(clientId && clientSecret),
-      environment: process.env.NODE_ENV,
-      credentials: {
-        clientId: clientId ? 'Set' : 'Not set',
-        clientSecret: clientSecret ? 'Set' : 'Not set',
-        authUrl: process.env.PHONEPE_AUTH_URL || 'Using default'
-      }
-    });
-  } catch (error) {
-    console.error('Error testing cancel mandate:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error: ' + error.message 
-    });
-  }
-});
 
-// @route   POST /api/riders/test-phonepe-auth
-// @desc    Test PhonePe authentication
+// @route   POST /api/riders/phonepe-auth
+// @desc    Get PhonePe access token (proxy endpoint for frontend)
 // @access  Private
-router.post('/test-phonepe-auth', auth, async (req, res) => {
+router.post('/phonepe-auth', auth, async (req, res) => {
   try {
-    const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
-    const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
-    const clientVersion = process.env.PHONEPE_CLIENT_VERSION || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION || '1.0';
-    const grantType = process.env.PHONEPE_GRANT_TYPE || process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE || 'client_credentials';
-    
-    console.log('Testing PhonePe credentials:', {
-      clientId: clientId ? 'Set' : 'Not set',
-      clientSecret: clientSecret ? 'Set' : 'Not set',
-      clientVersion,
-      grantType,
-      authUrl: process.env.PHONEPE_AUTH_URL || 'Using default'
-    });
-    
+    // const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
+    const clientId = 'SU2509161700329296269400';
+    // const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
+    const clientSecret = '6f68520b-d32f-4ef3-bbf7-b9fab1790970';
+    const clientVersion = 1;
+    const grantType = 'client_credentials';
+
     if (!clientId || !clientSecret) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: 'PhonePe credentials not configured',
-        credentials: {
-          clientId: clientId ? 'Set' : 'Not set',
-          clientSecret: clientSecret ? 'Set' : 'Not set',
-          envVars: {
-            PHONEPE_CLIENT_ID: !!process.env.PHONEPE_CLIENT_ID,
-            PHONEPE_CLIENT_SECRET: !!process.env.PHONEPE_CLIENT_SECRET,
-            NEXT_PUBLIC_PHONEPE_CLIENT_ID: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
-            NEXT_PUBLIC_PHONEPE_CLIENT_SECRET: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET
-          }
-        }
+        message: 'PhonePe credentials not configured'
       });
     }
 
+    console.log('PhonePe auth request:', {
+      clientId,
+      clientVersion,
+      grantType,
+      hasSecret: !!clientSecret
+    });
+
     const axios = require('axios');
-    console.log('Making PhonePe auth request...');
-    
     const authData = new URLSearchParams();
     authData.append('client_id', clientId);
     authData.append('client_version', clientVersion);
     authData.append('client_secret', clientSecret);
     authData.append('grant_type', grantType);
-    
-    const authResponse = await axios.post(process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token', authData, {
+
+    // Use consistent environment detection
+    const authUrl = 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
+    console.log('PhonePe auth URL:', authUrl);
+
+    const authResponse = await axios.post(authUrl, authData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
@@ -726,20 +692,103 @@ router.post('/test-phonepe-auth', auth, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'PhonePe authentication successful',
-      hasToken: !!authResponse.data.access_token,
-      tokenType: authResponse.data.token_type,
-      expiresIn: authResponse.data.expires_in,
-      fullResponse: authResponse.data
+      access_token: authResponse.data.access_token,
+      token_type: authResponse.data.token_type,
+      expires_in: authResponse.data.expires_in,
+      issued_at: authResponse.data.issued_at,
+      expires_at: authResponse.data.expires_at,
+      session_expires_at: authResponse.data.session_expires_at,
+      encrypted_access_token: authResponse.data.encrypted_access_token,
+      refresh_token: authResponse.data.refresh_token
     });
   } catch (error) {
-    console.error('PhonePe auth test error:', error.response?.data || error.message);
-    res.json({
+    console.error('PhonePe auth error:', error.response?.data || error.message);
+    res.status(500).json({
       success: false,
       message: 'PhonePe authentication failed',
-      error: error.response?.data || error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText
+      error: error.response?.data || error.message
+    });
+  }
+});
+
+// @route   POST /api/riders/phonepe-subscription-setup
+// @desc    Setup PhonePe subscription (proxy endpoint for frontend)
+// @access  Private
+router.post('/phonepe-subscription-setup', auth, async (req, res) => {
+  try {
+    const { access_token, subscriptionData } = req.body;
+
+    if (!access_token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Access token is required'
+      });
+    }
+
+    if (!subscriptionData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subscription data is required'
+      });
+    }
+
+    console.log('PhonePe subscription setup request:', {
+      hasToken: !!access_token,
+      merchantOrderId: subscriptionData.merchantOrderId,
+      amount: subscriptionData.amount,
+      tokenLength: access_token?.length,
+      tokenPreview: access_token?.substring(0, 50) + '...'
+    });
+
+    const axios = require('axios');
+    // Use the same base URL pattern as auth endpoint for consistency
+    // Check if we're in development/sandbox mode
+    // const authUrl = process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token';
+    const authUrl = 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
+    // const isProduction = process.env.NODE_ENV === 'production' && !authUrl.includes('preprod');
+
+    // const phonepeBaseUrl = isProduction 
+    //   ? 'https://api.phonepe.com/apis/pg'
+    //   : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+
+
+    const subscriptionUrl ='https://api.phonepe.com/apis/pg/subscriptions/v2/setup';
+    console.log('PhonePe subscription setup URL:', subscriptionUrl);
+    // console.log('Environment detection:', { isProduction, authUrl, NODE_ENV: process.env.NODE_ENV });
+
+    const headers = {
+      'Authorization': `O-Bearer ${access_token}`,
+      'Content-Type': 'application/json'
+    };
+
+    console.log('PhonePe subscription headers:', {
+      authorizationLength: headers.Authorization?.length,
+      authorizationPreview: headers.Authorization?.substring(0, 20) + '...',
+      contentType: headers['Content-Type']
+    });
+
+    const subscriptionResponse = await axios.post(
+      subscriptionUrl,
+      subscriptionData,
+      {
+        headers
+      }
+    );
+
+    console.log('PhonePe subscription setup response:', subscriptionResponse.status, subscriptionResponse.data);
+
+    res.json({
+      success: true,
+      orderId: subscriptionResponse.data.orderId,
+      state: subscriptionResponse.data.state,
+      response: subscriptionResponse.data
+    });
+  } catch (error) {
+    console.error('PhonePe subscription setup error:', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: 'PhonePe subscription setup failed',
+      error: error.response?.data || error.message
     });
   }
 });

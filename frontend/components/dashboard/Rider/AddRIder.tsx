@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
-import { apiClient, API_ENDPOINTS, phonepeClient } from '@/utils/api'
+import { apiClient, API_ENDPOINTS } from '@/utils/api'
 import { validateField } from '../../helperMethods/Validations'
 import { AddRiderProps, ValidationErrors, UploadedFile } from '../../helperMethods/interface'
 import RiderForm from './RiderForm'
@@ -29,6 +29,12 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
 
     const modalRef = useRef<HTMLDivElement>(null);
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+    console.log("client_id:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
+        "client_version:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION,
+        "client_secret:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET,
+        "grant_type:", process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE);
+
+    // console.log("check prod url:", phonepeClient.defaults.baseURL);
 
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {};
@@ -181,15 +187,10 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
         setIsLoading(true);
 
         try {
-            // PhonePe Authorization
-            const phonepeAuthResponse = await phonepeClient.post(API_ENDPOINTS.PHONEPE.AUTHORIZATION, {
-                client_id: process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
-                client_version: process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION,
-                client_secret: process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET,
-                grant_type: process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE,
-            });
+            // PhonePe Authorization (using backend proxy)
+            const phonepeAuthResponse = await apiClient.post(API_ENDPOINTS.PHONEPE.AUTHORIZATION);
 
-            if (!phonepeAuthResponse.data.access_token) {
+            if (!phonepeAuthResponse.data.success || !phonepeAuthResponse.data.access_token) {
                 return toast.error('Connection to PhonePe failed');
             }
 
@@ -197,34 +198,31 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
             const merchantSubscriptionId = `MS${Date.now()}`;
             const phonepe_access_token = phonepeAuthResponse.data.access_token;
 
-            // PhonePe Subscription Setup
-            const phonepeSubscriptionResponse = await phonepeClient.post(
+            // PhonePe Subscription Setup (using backend proxy)
+            const phonepeSubscriptionResponse = await apiClient.post(
                 API_ENDPOINTS.PHONEPE.SUBSCRIPTION_SETUP,
                 {
-                    merchantOrderId: merchantOrderId,
-                    amount: parseFloat(formData.weeklyRentAmount) * 100, // Convert to paise
-                    expireAt: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-                    paymentFlow: {
-                        type: "SUBSCRIPTION_SETUP",
-                        merchantSubscriptionId: merchantSubscriptionId,
-                        authWorkflowType: "TRANSACTION",
-                        amountType: "FIXED",
-                        maxAmount: 10000 * 100, // Convert to paise
-                        frequency: "WEEKLY",
-                        expireAt: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 year from now
-                        paymentMode: {
-                            type: "UPI_COLLECT",
-                            details: {
-                                type: "VPA",
-                                vpa: formData.upiId.trim()
+                    access_token: phonepe_access_token,
+                    subscriptionData: {
+                        merchantOrderId: merchantOrderId,
+                        amount: parseFloat(formData.weeklyRentAmount) * 100, // Convert to paise
+                        expireAt: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+                        paymentFlow: {
+                            type: "SUBSCRIPTION_SETUP",
+                            merchantSubscriptionId: merchantSubscriptionId,
+                            authWorkflowType: "TRANSACTION",
+                            amountType: "FIXED",
+                            maxAmount: 10000 * 100, // Convert to paise
+                            frequency: "WEEKLY",
+                            expireAt: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 year from now
+                            paymentMode: {
+                                type: "UPI_COLLECT",
+                                details: {
+                                    type: "VPA",
+                                    vpa: formData.upiId.trim()
+                                }
                             }
                         }
-                    }
-                },
-                {
-                    headers: {
-                        'Authorization': `O-Bearer ${phonepe_access_token}`,
-                        'Content-Type': 'application/json'
                     }
                 }
             );

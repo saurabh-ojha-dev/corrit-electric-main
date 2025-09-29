@@ -15,18 +15,19 @@ const getApiBaseUrl = () => {
 };
 
 const getPhonePeBaseUrl = () => {
-
-  // Development/Testing - use PhonePe Sandbox
-  if (process.env.NODE_ENV === 'development') {
-    return 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+  // Use a custom environment variable to control PhonePe environment
+  // Set NEXT_PUBLIC_PHONEPE_ENV=production in your .env file for production
+  if (process.env.NEXT_PUBLIC_PHONEPE_ENV === 'production') {
+    return 'https://api.phonepe.com/apis/identity-manager';
   }
 
-  // Production - use PhonePe Production API
-  return 'https://api.phonepe.com/apis/pg';
+  // Default to sandbox for development/testing
+  return 'https://api-preprod.phonepe.com/apis/pg-sandbox';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
 export const PHONEPE_BASE_URL = getPhonePeBaseUrl();
+console.log("check agya h :", PHONEPE_BASE_URL);
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -70,17 +71,15 @@ export const API_ENDPOINTS = {
     MANDATE_STATUS: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate-status`,
     CHECK_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/check-mandate`,
     CANCEL_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/cancel-mandate`,
-    TEST_CANCEL: `${API_BASE_URL}/api/riders/test-cancel`,
-    TEST_PHONEPE_AUTH: `${API_BASE_URL}/api/riders/test-phonepe-auth`,
     DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
     STATS: `${API_BASE_URL}/api/riders/stats/overview`,
   },
   PHONEPE: {
-    // Authorization
-    AUTHORIZATION: `${PHONEPE_BASE_URL}/v1/oauth/token`,
+    // Authorization (using backend proxy)
+    AUTHORIZATION: `${API_BASE_URL}/api/riders/phonepe-auth`,
 
-    // Subscription Management
-    SUBSCRIPTION_SETUP: `${PHONEPE_BASE_URL}/subscriptions/v2/setup`,
+    // Subscription Management (using backend proxy)
+    SUBSCRIPTION_SETUP: `${API_BASE_URL}/api/riders/phonepe-subscription-setup`,
     SUBSCRIPTION_ORDER_STATUS: (merchantOrderId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/order/${merchantOrderId}/status`,
     SUBSCRIPTION_STATUS: (merchantSubscriptionId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/${merchantSubscriptionId}/status`,
     SUBSCRIPTION_CANCEL: (merchantSubscriptionId: string) => `${PHONEPE_BASE_URL}/subscriptions/v2/${merchantSubscriptionId}/cancel`,
