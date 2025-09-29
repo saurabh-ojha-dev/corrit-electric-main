@@ -18,7 +18,8 @@ const notificationSchema = new mongoose.Schema({
       'payment_retry',
       'mandate_created',
       'mandate_failed',
-      'mandate_activated'
+      'mandate_activated',
+      'rider_approved'
     ],
     required: true
   },
