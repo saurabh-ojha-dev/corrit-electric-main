@@ -206,15 +206,15 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                     subscriptionData: {
                         merchantOrderId: merchantOrderId,
                         amount: parseFloat(formData.weeklyRentAmount) * 100, // Convert to paise
-                        expireAt: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+                        // expireAt: 10 * 60 * 1000, // 10 minutes from now
                         paymentFlow: {
                             type: "SUBSCRIPTION_SETUP",
                             merchantSubscriptionId: merchantSubscriptionId,
                             authWorkflowType: "TRANSACTION",
                             amountType: "FIXED",
-                            maxAmount: 10000 * 100, // Convert to paise
+                            maxAmount: parseFloat(formData.weeklyRentAmount) * 100, // FIXED: maxAmount must equal amount
                             frequency: "WEEKLY",
-                            expireAt: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 year from now
+                            // expireAt: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 year from now
                             paymentMode: {
                                 type: "UPI_COLLECT",
                                 details: {
