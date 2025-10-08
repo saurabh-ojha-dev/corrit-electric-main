@@ -15,7 +15,6 @@ const Riders = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [riders, setRiders] = useState<Rider[]>([]);
-    // console.log("riders agye hai",riders);
     const [totalRiders, setTotalRiders] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');

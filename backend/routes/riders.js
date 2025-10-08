@@ -35,20 +35,29 @@ router.get('/', auth, async (req, res) => {
       status,
       verificationStatus,
       mandateStatus,
-      assignedAdmin
+      assignedAdmin,
+      merchantOrderId // New parameter for finding rider by payment ID
     } = req.query;
 
     const query = {};
 
-    // Search filter
-    if (search) {
+    // If merchantOrderId is provided, find rider by payment ID
+    if (merchantOrderId) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-        { riderId: { $regex: search, $options: 'i' } },
-        { upiId: { $regex: search, $options: 'i' } }
+        { merchantOrderId: merchantOrderId },
+        { "mandateDetails.merchantOrderId": merchantOrderId }
       ];
+    } else {
+      // Search filter
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+          { riderId: { $regex: search, $options: 'i' } },
+          { upiId: { $regex: search, $options: 'i' } }
+        ];
+      }
     }
 
     // Status filters

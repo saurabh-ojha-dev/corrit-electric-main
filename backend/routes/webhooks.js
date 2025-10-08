@@ -390,11 +390,59 @@ async function handleSubscriptionCancelled(payload) {
 // Handle redemption events
 async function handleRedemptionOrderCompleted(payload) {
   try {
-    const { merchantOrderId, amount, paymentDetails } = payload;
+    const { merchantOrderId, orderId, amount, paymentFlow, paymentDetails } = payload;
 
-    // Find and update autopay record
-    const autopay = await PhonePeAutopay.findOne({ merchantOrderId });
-    if (autopay) {
+    // Find existing autopay record or create new one
+    let autopay = await PhonePeAutopay.findOne({ merchantOrderId });
+    
+    if (!autopay) {
+      // Create new autopay record for redemption
+      const rider = await Rider.findOne({
+        "mandateDetails.merchantSubscriptionId": paymentFlow.merchantSubscriptionId
+      });
+
+      if (rider) {
+        autopay = new PhonePeAutopay({
+          riderId: rider._id,
+          mandateId: orderId,
+          merchantOrderId,
+          merchantSubscriptionId: paymentFlow.merchantSubscriptionId,
+          amount: amount,
+          status: "success",
+          phonepeStatus: "COMPLETED",
+          transactionId: paymentDetails?.[0]?.transactionId,
+          orderId: orderId,
+          utr: paymentDetails?.[0]?.rail?.utr,
+          scheduledDate: new Date(),
+          processedDate: new Date(),
+          mandateDetails: {
+            startDate: new Date(),
+            endDate: new Date(paymentFlow.validUpto),
+            frequency: 'weekly',
+            maxAmount: amount
+          },
+          phonepeResponse: payload,
+          isRecurring: true,
+          nextDebitDate: calculateNextDebitDate('weekly'),
+          lastDebitDate: new Date(),
+          totalDebits: 1,
+          totalAmount: amount,
+        });
+
+        await autopay.save();
+
+        // Create notification for successful payment
+        await Notification.create({
+          type: "payment_success",
+          title: `Payment Successful – ${rider.riderId}`,
+          description: `Weekly payment of ₹${amount/100} processed successfully. UTR: ${paymentDetails?.[0]?.rail?.utr}`,
+          riderId: rider._id,
+          priority: "low",
+          actionRequired: false,
+        });
+      }
+    } else {
+      // Update existing record
       await autopay.updateStatus("success", {
         phonepeStatus: "COMPLETED",
         transactionId: paymentDetails?.[0]?.transactionId,
@@ -409,10 +457,58 @@ async function handleRedemptionOrderCompleted(payload) {
 
 async function handleRedemptionOrderFailed(payload) {
   try {
-    const { merchantOrderId, errorCode, detailedErrorCode } = payload;
+    const { merchantOrderId, orderId, amount, paymentFlow, errorCode, detailedErrorCode } = payload;
 
-    const autopay = await PhonePeAutopay.findOne({ merchantOrderId });
-    if (autopay) {
+    // Find existing autopay record or create new one for failed payment
+    let autopay = await PhonePeAutopay.findOne({ merchantOrderId });
+    
+    if (!autopay) {
+      // Create new autopay record for failed redemption
+      const rider = await Rider.findOne({
+        "mandateDetails.merchantSubscriptionId": paymentFlow.merchantSubscriptionId
+      });
+
+      if (rider) {
+        autopay = new PhonePeAutopay({
+          riderId: rider._id,
+          mandateId: orderId,
+          merchantOrderId,
+          merchantSubscriptionId: paymentFlow.merchantSubscriptionId,
+          amount: amount,
+          status: "failed",
+          phonepeStatus: "FAILED",
+          transactionId: null,
+          orderId: orderId,
+          utr: null,
+          scheduledDate: new Date(),
+          processedDate: new Date(),
+          failureReason: getErrorMessage(errorCode, detailedErrorCode),
+          mandateDetails: {
+            startDate: new Date(),
+            endDate: new Date(paymentFlow.validUpto),
+            frequency: 'weekly',
+            maxAmount: amount
+          },
+          phonepeResponse: payload,
+          isRecurring: true,
+          totalDebits: 0,
+          totalAmount: 0,
+        });
+
+        await autopay.save();
+
+        // Create notification for failed payment
+        await Notification.create({
+          type: "payment_failed",
+          title: `Payment Failed – ${rider.riderId}`,
+          description: `Weekly payment of ₹${amount/100} failed. Reason: ${getErrorMessage(errorCode, detailedErrorCode)}`,
+          riderId: rider._id,
+          priority: "high",
+          actionRequired: true,
+        });
+      }
+    } else {
+      // Update existing record
       await autopay.updateStatus("failed", {
         phonepeStatus: "FAILED",
         failureReason: getErrorMessage(errorCode, detailedErrorCode),

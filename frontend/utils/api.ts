@@ -96,6 +96,7 @@ export const API_ENDPOINTS = {
   AUTOPAY: {
     LIST: `${API_BASE_URL}/api/payments`,
     STATS: `${API_BASE_URL}/api/payments/stats`,
+    CHECK_ORDER_STATUS: `${API_BASE_URL}/api/payments/check-order-status`,
   },
   NOTIFICATIONS: {
     LIST: `${API_BASE_URL}/api/notifications`,
