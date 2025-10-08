@@ -15,6 +15,7 @@ const Riders = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [riders, setRiders] = useState<Rider[]>([]);
+    // console.log("riders agye hai",riders);
     const [totalRiders, setTotalRiders] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -336,7 +337,7 @@ const Riders = () => {
                 rider.mandateStatus || 'pending',
                 rider.verificationStatus || 'pending',
                 `"${formatDate(rider.createdAt)}"`,
-                `"${getNextPaymentDate(rider.createdAt)}"`
+                `"${rider.nextDebitDate ? formatDate(rider.nextDebitDate) : 'N/A'}"`
             ];
             csvRows.push(row.join(','));
         });
@@ -602,7 +603,9 @@ const Riders = () => {
                                                 <span className="text-xs lg:text-sm font-medium text-gray-900">{rider.weeklyRentAmount}</span>
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
-                                                <span className="text-xs lg:text-sm text-gray-900">{getNextPaymentDate(rider.createdAt)}</span>
+                                                <span className="text-xs lg:text-sm text-gray-900">
+                                                    {rider.nextDebitDate ? formatDate(rider.nextDebitDate) : 'N/A'}
+                                                </span>
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
                                                 <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">

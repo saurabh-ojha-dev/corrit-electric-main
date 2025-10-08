@@ -97,6 +97,8 @@ export interface Rider {
         detailedErrorCode?: string;
         failureReason?: string;
     };
+    nextDebitDate?: string | null;
+    lastDebitDate?: string | null;
     createdAt: string;
     updatedAt: string;
 }

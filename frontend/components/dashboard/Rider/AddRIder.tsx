@@ -29,10 +29,10 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
 
     const modalRef = useRef<HTMLDivElement>(null);
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-    console.log("client_id:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
-        "client_version:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION,
-        "client_secret:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET,
-        "grant_type:", process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE);
+    // console.log("client_id:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
+    //     "client_version:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION,
+    //     "client_secret:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET,
+    //     "grant_type:", process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE);
 
     // console.log("check prod url:", phonepeClient.defaults.baseURL);
 

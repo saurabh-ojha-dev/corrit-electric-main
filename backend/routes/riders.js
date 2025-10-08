@@ -68,9 +68,37 @@ router.get('/', auth, async (req, res) => {
 
     const riders = await Rider.paginate(query, options);
 
+    // Get nextDebitDate from PhonePeAutopay for each rider
+    const ridersWithNextDebitDate = await Promise.all(
+      riders.docs.map(async (rider) => {
+        try {
+          // Find the most recent PhonePeAutopay record for this rider
+          const autopayRecord = await PhonePeAutopay.findOne(
+            { riderId: rider._id },
+            { nextDebitDate: 1, lastDebitDate: 1 },
+            { sort: { createdAt: -1 } }
+          );
+
+          // Convert rider to plain object and add nextDebitDate
+          const riderObj = rider.toObject();
+          riderObj.nextDebitDate = autopayRecord?.nextDebitDate || null;
+          riderObj.lastDebitDate = autopayRecord?.lastDebitDate || null;
+          
+          return riderObj;
+        } catch (error) {
+          console.error(`Error fetching nextDebitDate for rider ${rider._id}:`, error);
+          // Return rider without nextDebitDate if there's an error
+          const riderObj = rider.toObject();
+          riderObj.nextDebitDate = null;
+          riderObj.lastDebitDate = null;
+          return riderObj;
+        }
+      })
+    );
+
     res.json({
       success: true,
-      riders: riders.docs,
+      riders: ridersWithNextDebitDate,
       total: riders.totalDocs,
       pagination: {
         page: riders.page,
