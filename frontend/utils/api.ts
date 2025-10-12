@@ -27,7 +27,6 @@ const getPhonePeBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 export const PHONEPE_BASE_URL = getPhonePeBaseUrl();
-console.log("check agya h :", PHONEPE_BASE_URL);
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -73,6 +72,7 @@ export const API_ENDPOINTS = {
     CANCEL_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/cancel-mandate`,
     DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
     STATS: `${API_BASE_URL}/api/riders/stats/overview`,
+    WEEKLY_PAYMENTS: `${API_BASE_URL}/api/riders/weekly-payments`,
   },
   PHONEPE: {
     // Authorization (using backend proxy)

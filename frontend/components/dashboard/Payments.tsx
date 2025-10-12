@@ -4,13 +4,61 @@ import { useRouter } from 'next/navigation'
 import { Download, Mail, Phone, Trash2, CheckCircle, XCircle, User, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Pagination from '../common/Pagination'
-import { riderStatusData } from '@/constants/data'
 import Image from 'next/image'
 import PaymentHistory from './PaymentHistory'
+import { API_ENDPOINTS, apiClient } from '@/utils/api'
+
+interface WeeklyPaymentRider {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    riderId: string;
+    upiId: string;
+    mandateStatus: string;
+    weeklyAmount: string;
+    nextPayment: string;
+    mandateExpiryDate?: string;
+}
 
 const Payments = () => {
     const [isLoading, setIsLoading] = useState(true);
+    const [weeklyPaymentRiders, setWeeklyPaymentRiders] = useState<WeeklyPaymentRider[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('active');
     const router = useRouter();
+
+    // Fetch weekly payment riders
+    const fetchWeeklyPaymentRiders = async () => {
+        try {
+            const params = new URLSearchParams({
+                mandateStatus: statusFilter,
+                ...(searchTerm && { search: searchTerm })
+            });
+
+            const response = await apiClient.get(`${API_ENDPOINTS.RIDERS.WEEKLY_PAYMENTS}?${params}`);
+            
+            if (response.data.success) {
+                setWeeklyPaymentRiders(response.data.riders);
+            } else {
+                toast.error('Failed to fetch weekly payment riders');
+            }
+        } catch (error) {
+            console.error('Error fetching weekly payment riders:', error);
+            toast.error('Failed to fetch weekly payment riders');
+        }
+    };
+
+    // Handle send notification
+    const handleSendNotification = async (riderId: string) => {
+        try {
+            // TODO: Implement notification sending logic
+            toast.success('Notification sent successfully!');
+        } catch (error) {
+            console.error('Error sending notification:', error);
+            toast.error('Failed to send notification');
+        }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('adminToken')
@@ -19,7 +67,8 @@ const Payments = () => {
             return
         }
         setIsLoading(false);
-    }, [router])
+        fetchWeeklyPaymentRiders();
+    }, [router, statusFilter, searchTerm])
 
     if (isLoading) {
         return (
@@ -53,6 +102,8 @@ const Payments = () => {
                                 <input
                                     type="text"
                                     placeholder="Search Riders by name, email, or UPI ID..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     className="bg-[#00000008] placeholder:text-black w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                                 />
                                 <svg className="absolute left-2 lg:left-3 top-2.5 h-4 w-4 lg:h-5 lg:w-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,8 +120,12 @@ const Payments = () => {
                                         </svg>
                                     </div>
                                     <div className="relative">
-                                        <select title='status' className="appearance-none bg-white border border-gray-300 rounded-xl px-3 lg:px-4 py-1.5 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[120px] lg:min-w-[140px] text-xs lg:text-sm font-medium">
-                                            <option value="" className="py-2 px-3">All Status</option>
+                                        <select 
+                                            title='status' 
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="appearance-none bg-white border border-gray-300 rounded-xl px-3 lg:px-4 py-1.5 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[120px] lg:min-w-[140px] text-xs lg:text-sm font-medium"
+                                        >
                                             <option value="active" className="py-2 px-3">🟢 Active</option>
                                             <option value="failed" className="py-2 px-3">🔴 Failed</option>
                                             <option value="revoked" className="py-2 px-3">⚪ Revoked</option>
@@ -102,36 +157,46 @@ const Payments = () => {
 
                         {/* Rider Payment Cards Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
-                            {riderStatusData.map((rider, index) => (
-                                <div key={rider.id} className="bg-[#F5F5F5] rounded-lg p-3 lg:p-4">
-                                    <div className="flex items-start justify-between">
-                                        {/* Rider Avatar */}
-                                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-black rounded-lg flex items-center justify-center">
-                                            <span className="text-white font-bold text-sm lg:text-lg">
-                                                {rider.name.charAt(0).toUpperCase()}
-                                            </span>
-                                        </div>
-
-                                        {/* Rider Info */}
-                                        <div className="flex-1 ml-2 lg:ml-3">
-                                            <h3 className="font-bold text-black text-sm lg:text-base">{rider.name}</h3>
-                                            <p className="text-xs lg:text-sm text-gray-600">{rider.email}</p>
-                                        </div>
-
-                                        {/* Payment Details */}
-                                        <div className="flex flex-col items-end justify-end">
-                                            <div className="text-base lg:text-lg font-bold text-black">₹ 680</div>
-                                            <div className="text-xs lg:text-sm text-gray-600">weekly</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Send Notification Button */}
-                                    <button type='button' className="w-full mt-3 lg:mt-4 bg-[#0063B0] text-white py-2 px-3 lg:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-xs lg:text-sm">
-                                        <Bell className="w-3 h-3 lg:w-4 lg:h-4" fill='white' />
-                                        <span>Send Notification</span>
-                                    </button>
+                            {weeklyPaymentRiders.length === 0 ? (
+                                <div className="col-span-full text-center py-8 text-gray-500">
+                                    No riders found for weekly payments
                                 </div>
-                            ))}
+                            ) : (
+                                weeklyPaymentRiders.map((rider) => (
+                                    <div key={rider.id} className="bg-[#F5F5F5] rounded-lg p-3 lg:p-4">
+                                        <div className="flex items-start justify-between">
+                                            {/* Rider Avatar */}
+                                            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-black rounded-lg flex items-center justify-center">
+                                                <span className="text-white font-bold text-sm lg:text-lg">
+                                                    {rider.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+
+                                            {/* Rider Info */}
+                                            <div className="flex-1 ml-2 lg:ml-3">
+                                                <h3 className="font-bold text-black text-sm lg:text-base">{rider.name}</h3>
+                                                <p className="text-xs lg:text-sm text-gray-600">{rider.email}</p>
+                                            </div>
+
+                                            {/* Payment Details */}
+                                            <div className="flex flex-col items-end justify-end">
+                                                <div className="text-base lg:text-lg font-bold text-black">{rider.weeklyAmount}</div>
+                                                <div className="text-xs lg:text-sm text-gray-600">weekly</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Send Notification Button */}
+                                        <button 
+                                            type='button' 
+                                            onClick={() => handleSendNotification(rider.id)}
+                                            className="w-full mt-3 lg:mt-4 bg-[#0063B0] text-white py-2 px-3 lg:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-xs lg:text-sm"
+                                        >
+                                            <Bell className="w-3 h-3 lg:w-4 lg:h-4" fill='white' />
+                                            <span>Send Notification</span>
+                                        </button>
+                                    </div>
+                                ))
+                            )}
                         </div>
 
                         {/* Pagination */}

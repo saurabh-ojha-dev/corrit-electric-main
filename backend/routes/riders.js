@@ -123,6 +123,90 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/riders/weekly-payments
+// @desc    Get active riders for weekly payments
+// @access  Private
+router.get('/weekly-payments', auth, async (req, res) => {
+  try {
+    const { search, mandateStatus = 'active' } = req.query;
+
+    // Build query for active riders with mandate
+    const query = {
+      isActive: true,
+      mandateStatus: mandateStatus
+    };
+
+    // Add search functionality
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { riderId: { $regex: search, $options: 'i' } },
+        { upiId: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Find riders with their mandate details
+    const riders = await Rider.find(query)
+      .select('name email phone riderId upiId mandateDetails mandateStatus mandateExpiryDate weeklyRentAmount')
+      .sort({ createdAt: -1 });
+
+    // Get next debit date from PhonePeAutopay for each rider
+    const ridersWithPaymentInfo = await Promise.all(
+      riders.map(async (rider) => {
+        try {
+          // Find the most recent PhonePeAutopay record for this rider
+          const autopayRecord = await PhonePeAutopay.findOne(
+            { riderId: rider._id },
+            { nextDebitDate: 1, lastDebitDate: 1, amount: 1 },
+            { sort: { createdAt: -1 } }
+          );
+
+          // Convert rider to plain object and add payment info
+          const riderObj = rider.toObject();
+          riderObj.id = rider._id.toString();
+          riderObj.nextDebitDate = autopayRecord?.nextDebitDate || null;
+          riderObj.lastDebitDate = autopayRecord?.lastDebitDate || null;
+          riderObj.weeklyAmount = autopayRecord?.amount ? `₹${(autopayRecord.amount / 100).toFixed(0)}` : `₹${rider.weeklyRentAmount}`;
+          
+          // Format next payment date
+          if (riderObj.nextDebitDate) {
+            riderObj.nextPayment = new Date(riderObj.nextDebitDate).toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            });
+          } else {
+            riderObj.nextPayment = 'N/A';
+          }
+
+          return riderObj;
+        } catch (error) {
+          console.error(`Error fetching payment info for rider ${rider._id}:`, error);
+          // Return rider without payment info if there's an error
+          const riderObj = rider.toObject();
+          riderObj.id = rider._id.toString();
+          riderObj.nextDebitDate = null;
+          riderObj.lastDebitDate = null;
+          riderObj.weeklyAmount = `₹${rider.weeklyRentAmount}`;
+          riderObj.nextPayment = 'N/A';
+          return riderObj;
+        }
+      })
+    );
+
+    res.json({
+      success: true,
+      riders: ridersWithPaymentInfo,
+      total: ridersWithPaymentInfo.length
+    });
+  } catch (error) {
+    console.error('Error fetching riders for weekly payments:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // @route   POST /api/riders
 // @desc    Create new rider
 // @access  Private
@@ -201,7 +285,12 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
       documents: documentsObj,
       mandateDetails: {
         merchantOrderId: req.body.merchantOrderId,
-        merchantSubscriptionId: req.body.merchantSubscriptionId
+        merchantSubscriptionId: req.body.merchantSubscriptionId,
+        amount: parseFloat(weeklyRentAmount) * 100,
+        maxAmount: parseFloat(weeklyRentAmount) * 100,
+        frequency: 'on_demand',
+        authWorkflowType: 'TRANSACTION',
+        amountType: 'FIXED'
       }
     });
 
@@ -804,6 +893,7 @@ router.post('/phonepe-subscription-setup', auth, async (req, res) => {
       contentType: headers['Content-Type']
     });
 
+    // Send the subscriptionData directly to PhonePe (not wrapped in subscriptionData)
     const subscriptionResponse = await axios.post(
       subscriptionUrl,
       subscriptionData,
@@ -831,3 +921,5 @@ router.post('/phonepe-subscription-setup', auth, async (req, res) => {
 });
 
 module.exports = router;
+
+

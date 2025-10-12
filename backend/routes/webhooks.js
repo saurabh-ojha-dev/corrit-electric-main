@@ -418,12 +418,12 @@ async function handleRedemptionOrderCompleted(payload) {
           mandateDetails: {
             startDate: new Date(),
             endDate: new Date(paymentFlow.validUpto),
-            frequency: 'weekly',
+            frequency: 'on_demand',
             maxAmount: amount
           },
           phonepeResponse: payload,
           isRecurring: true,
-          nextDebitDate: calculateNextDebitDate('weekly'),
+          nextDebitDate: calculateNextDebitDate('on_demand'),
           lastDebitDate: new Date(),
           totalDebits: 1,
           totalAmount: amount,
@@ -486,7 +486,7 @@ async function handleRedemptionOrderFailed(payload) {
           mandateDetails: {
             startDate: new Date(),
             endDate: new Date(paymentFlow.validUpto),
-            frequency: 'weekly',
+            frequency: 'on_demand',
             maxAmount: amount
           },
           phonepeResponse: payload,
@@ -549,8 +549,10 @@ function calculateNextDebitDate(frequency) {
       return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     case "monthly":
       return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    case "on_demand":
+      return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days for on_demand
     default:
-      return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // Default to 3 days
   }
 }
 

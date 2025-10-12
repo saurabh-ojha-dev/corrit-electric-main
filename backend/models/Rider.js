@@ -158,6 +158,9 @@ const riderSchema = new mongoose.Schema({
     merchantSubscriptionId: {
       type: String
     },
+    merchantUserId: {
+      type: String
+    },
     amount: {
       type: Number
     },
@@ -173,6 +176,9 @@ const riderSchema = new mongoose.Schema({
     },
     amountType: {
       type: String
+    },
+    recurringCount: {
+      type: Number
     },
     errorCode: {
       type: String

@@ -315,7 +315,7 @@ const Riders = () => {
             'Phone',
             'UPI ID',
             'Address',
-            'Weekly Rent Amount',
+            'Rent Amount (Every 3 Days)',
             'Mandate Status',
             'Verification Status',
             'Created At',
@@ -488,7 +488,7 @@ const Riders = () => {
                     <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
                         <div className="flex flex-col items-start justify-start gap-2">
                             <h1 className="text-xl lg:text-2xl font-semibold text-black border-b-2 border-[#E51E25] pb-1">Riders</h1>
-                            <p className="text-sm lg:text-lg font-normal text-black">Manage bike rental Riders and their Payment manadates</p>
+                            <p className="text-sm lg:text-lg font-normal text-black">Manage bike rental Riders and their Payment mandates (every 3 days)</p>
                         </div>
                         <div className='flex items-center gap-2 w-full sm:w-auto'>
                             <button
@@ -564,7 +564,7 @@ const Riders = () => {
                                         <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white rounded-tl-[12px] text-xs lg:text-sm">Riders</th>
                                         <th className="text-left py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Contact Info</th>
                                         <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Mandate Status</th>
-                                        <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Weekly Amount</th>
+                                        <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Amount (Every 3 Days)</th>
                                         <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white text-xs lg:text-sm">Next payment</th>
                                         <th className="text-center py-2 lg:py-3 px-2 lg:px-4 font-normal border border-r border-[#FFFFFF] text-white rounded-tr-[12px] text-xs lg:text-sm">Actions</th>
                                     </tr>

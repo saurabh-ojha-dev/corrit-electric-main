@@ -80,8 +80,8 @@ const phonepeAutopaySchema = new mongoose.Schema({
     },
     frequency: {
       type: String,
-      enum: ['weekly', 'monthly'],
-      default: 'weekly'
+      enum: ['weekly', 'monthly', 'on_demand'],
+      default: 'on_demand'
     },
     maxAmount: {
       type: Number,

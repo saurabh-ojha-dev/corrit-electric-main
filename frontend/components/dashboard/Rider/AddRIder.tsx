@@ -29,12 +29,6 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
 
     const modalRef = useRef<HTMLDivElement>(null);
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-    // console.log("client_id:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
-    //     "client_version:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION,
-    //     "client_secret:", process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET,
-    //     "grant_type:", process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE);
-
-    // console.log("check prod url:", phonepeClient.defaults.baseURL);
 
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {};
@@ -206,15 +200,15 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                     subscriptionData: {
                         merchantOrderId: merchantOrderId,
                         amount: parseFloat(formData.weeklyRentAmount) * 100, // Convert to paise
-                        // expireAt: 10 * 60 * 1000, // 10 minutes from now
+                        expireAt: Date.now() + (10 * 60 * 1000), // 10 minutes from now
                         paymentFlow: {
                             type: "SUBSCRIPTION_SETUP",
                             merchantSubscriptionId: merchantSubscriptionId,
                             authWorkflowType: "TRANSACTION",
                             amountType: "FIXED",
                             maxAmount: parseFloat(formData.weeklyRentAmount) * 100, // FIXED: maxAmount must equal amount
-                            frequency: "WEEKLY",
-                            // expireAt: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 year from now
+                            frequency: "ON_DEMAND",
+                            expireAt: Date.now() + (365 * 24 * 60 * 60 * 1000), // 1 year from now
                             paymentMode: {
                                 type: "UPI_COLLECT",
                                 details: {
