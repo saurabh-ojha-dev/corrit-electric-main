@@ -41,9 +41,17 @@ const AddVehicle: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) =>
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+        
+        // Remove special characters for IOT IMEI and Controller Number fields
+        let sanitizedValue = value;
+        if (name === 'iotImeiNumber' || name === 'controllerNumber') {
+            // Allow only alphanumeric characters (letters and numbers)
+            sanitizedValue = value.replace(/[^a-zA-Z0-9]/g, '');
+        }
+        
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: sanitizedValue
         }));
     };
 
@@ -189,7 +197,7 @@ const AddVehicle: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) =>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
                                 <input
-                                    type="number"
+                                    type="text"
                                     name="iotImeiNumber"
                                     value={formData.iotImeiNumber}
                                     onChange={handleInputChange}
@@ -206,7 +214,7 @@ const AddVehicle: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) =>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-black" />
                                 <input
-                                    type="number"
+                                    type="text"
                                     name="controllerNumber"
                                     value={formData.controllerNumber}
                                     onChange={handleInputChange}

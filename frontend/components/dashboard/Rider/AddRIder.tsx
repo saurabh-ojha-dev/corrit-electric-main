@@ -42,6 +42,49 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
             }
         });
 
+        console.log('File upload validation - Uploaded files:', uploadedFiles);
+        console.log('File upload validation - Form data:', formData);
+
+        // Additional validation for required file uploads
+        if (!uploadedFiles.aadhaar && !formData.aadhaarCard.trim()) {
+            newErrors.aadhaarCard = 'Please upload Aadhaar document or enter the card number';
+        }
+        
+        if (!uploadedFiles.pan && !formData.panCard.trim()) {
+            newErrors.panCard = 'Please upload PAN document or enter the card number';
+        }
+        
+        if (!uploadedFiles.bankProof && !formData.bankAccountNumber.trim()) {
+            newErrors.bankAccountNumber = 'Please upload bank passbook or enter account number';
+        }
+        
+        if (!uploadedFiles.addressProof) {
+            newErrors.addressProof = 'Please upload address proof document (electricity bill)';
+        }
+        
+        if (!uploadedFiles.picture) {
+            newErrors.picture = 'Please upload profile picture';
+        }
+        
+        // Validate that if text input is provided, the format should be correct
+        if (formData.aadhaarCard.trim() && !/^\d{12}$/.test(formData.aadhaarCard.trim())) {
+            newErrors.aadhaarCard = 'Aadhaar card number must be 12 digits';
+        }
+        
+        if (formData.panCard.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panCard.trim().toUpperCase())) {
+            newErrors.panCard = 'Please enter a valid PAN card number (e.g., ABCDE1234F)';
+        }
+        
+        if (formData.bankAccountNumber.trim() && !/^\d{9,18}$/.test(formData.bankAccountNumber.trim())) {
+            newErrors.bankAccountNumber = 'Bank account number must be 9-18 digits';
+        }
+        
+        // Validate battery card if provided (optional field)
+        if (uploadedFiles.batteryCard && !formData.batterySmartCard.trim()) {
+            newErrors.batterySmartCard = 'Battery smart card number is required when document is uploaded';
+        }
+
+        console.log('Validation errors found:', newErrors);
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -82,6 +125,24 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                     ...prev,
                     [documentType]: response.data.data
                 }));
+                
+                // Clear validation errors for this document type
+                setErrors(prev => {
+                    const newErrors = { ...prev };
+                    if (documentType === 'aadhaar') {
+                        delete newErrors.aadhaarCard;
+                    } else if (documentType === 'pan') {
+                        delete newErrors.panCard;
+                    } else if (documentType === 'bankProof') {
+                        delete newErrors.bankAccountNumber;
+                    } else if (documentType === 'addressProof') {
+                        delete newErrors.addressProof;
+                    } else if (documentType === 'picture') {
+                        delete newErrors.picture;
+                    }
+                    return newErrors;
+                });
+                
                 toast.success(`${documentType} uploaded successfully`);
             } else {
                 toast.error(response.data.message || 'Upload failed');
@@ -104,6 +165,8 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
 
     // Trigger file input
     const triggerFileInput = (documentType: string) => {
+        // Mark the field as touched when user clicks to upload
+        setTouched(prev => ({ ...prev, [documentType]: true }));
         fileInputRefs.current[documentType]?.click();
     };
 
@@ -114,6 +177,11 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
             delete newFiles[documentType];
             return newFiles;
         });
+        
+        // Re-validate the field when file is removed
+        setTimeout(() => {
+            validateForm();
+        }, 100);
     };
 
     // Close modal when clicking outside
@@ -147,6 +215,29 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                 [name]: undefined
             }));
         }
+        
+        // Clear related file upload errors when text input is provided
+        if (name === 'aadhaarCard' && value.trim() && uploadedFiles.aadhaar) {
+            setErrors(prev => ({
+                ...prev,
+                aadhaarCard: undefined
+            }));
+        } else if (name === 'panCard' && value.trim() && uploadedFiles.pan) {
+            setErrors(prev => ({
+                ...prev,
+                panCard: undefined
+            }));
+        } else if (name === 'bankAccountNumber' && value.trim() && uploadedFiles.bankProof) {
+            setErrors(prev => ({
+                ...prev,
+                bankAccountNumber: undefined
+            }));
+        } else if (name === 'batterySmartCard' && value.trim() && uploadedFiles.batteryCard) {
+            setErrors(prev => ({
+                ...prev,
+                batterySmartCard: undefined
+            }));
+        }
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -165,15 +256,33 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
 
         if (isLoading) return;
 
-        // Mark all fields as touched
+        // Mark all fields as touched including file upload fields
         const allTouched = Object.keys(formData).reduce((acc, key) => {
             acc[key] = true;
             return acc;
         }, {} as Record<string, boolean>);
+        
+        // Also mark file upload fields as touched
+        const fileUploadFields = ['aadhaar', 'pan', 'addressProof', 'bankProof', 'picture', 'batteryCard'];
+        fileUploadFields.forEach(field => {
+            allTouched[field] = true;
+        });
+        
+        // Also mark the corresponding text input fields as touched for validation display
+        allTouched.aadhaarCard = true;
+        allTouched.panCard = true;
+        allTouched.bankAccountNumber = true;
+        allTouched.addressProof = true;
+        allTouched.picture = true;
+        allTouched.batterySmartCard = true;
+        
         setTouched(allTouched);
 
         // Validate form
         if (!validateForm()) {
+            console.log('Validation failed. Current errors:', errors);
+            console.log('Uploaded files:', uploadedFiles);
+            console.log('Form data:', formData);
             toast.error('Please fix the validation errors before submitting');
             return;
         }
@@ -265,8 +374,25 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
             console.error('Error creating Rider:', error);
 
             if (error.response?.status === 400) {
-                const errorMessage = error.response.data.message || 'Invalid data provided';
-                toast.error(errorMessage);
+                // Check if backend returned field-specific validation errors
+                if (error.response.data?.errors && typeof error.response.data.errors === 'object') {
+                    // Map backend errors to form fields
+                    const backendErrors: ValidationErrors = {};
+                    const fieldsTouched: Record<string, boolean> = {};
+
+                    Object.keys(error.response.data.errors).forEach(key => {
+                        backendErrors[key as keyof ValidationErrors] = error.response.data.errors[key];
+                        fieldsTouched[key] = true;
+                    });
+
+                    setErrors(backendErrors);
+                    setTouched(prev => ({ ...prev, ...fieldsTouched }));
+                    toast.error('Please fix the validation errors below');
+                } else {
+                    // Show generic error message if no field-specific errors
+                    const errorMessage = error.response.data.message || 'Invalid data provided';
+                    toast.error(errorMessage);
+                }
             } else if (error.response?.status === 409) {
                 const errorMessage = error.response.data.message || 'A Rider with this information already exists';
                 toast.error(errorMessage);

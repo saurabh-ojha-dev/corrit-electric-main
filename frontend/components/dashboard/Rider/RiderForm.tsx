@@ -273,6 +273,9 @@ const RiderForm: React.FC<RiderFormProps> = ({
                             triggerFileInput={triggerFileInput}
                             removeUploadedFile={removeUploadedFile}
                         />
+                        {touched.aadhaarCard && errors.aadhaarCard && (
+                            <p className="text-red-500 text-xs mt-1">{errors.aadhaarCard}</p>
+                        )}
                     </div>
                 </div>
 
@@ -320,6 +323,9 @@ const RiderForm: React.FC<RiderFormProps> = ({
                             triggerFileInput={triggerFileInput}
                             removeUploadedFile={removeUploadedFile}
                         />
+                        {touched.panCard && errors.panCard && (
+                            <p className="text-red-500 text-xs mt-1">{errors.panCard}</p>
+                        )}
                     </div>
                 </div>
 
@@ -368,6 +374,9 @@ const RiderForm: React.FC<RiderFormProps> = ({
                             triggerFileInput={triggerFileInput}
                             removeUploadedFile={removeUploadedFile}
                         />
+                        {touched.addressProof && errors.addressProof && (
+                            <p className="text-red-500 text-xs mt-1">{errors.addressProof}</p>
+                        )}
                     </div>
                 </div>
 
@@ -415,6 +424,9 @@ const RiderForm: React.FC<RiderFormProps> = ({
                             triggerFileInput={triggerFileInput}
                             removeUploadedFile={removeUploadedFile}
                         />
+                        {touched.bankAccountNumber && errors.bankAccountNumber && (
+                            <p className="text-red-500 text-xs mt-1">{errors.bankAccountNumber}</p>
+                        )}
                     </div>
                 </div>
 
@@ -462,6 +474,9 @@ const RiderForm: React.FC<RiderFormProps> = ({
                             triggerFileInput={triggerFileInput}
                             removeUploadedFile={removeUploadedFile}
                         />
+                        {touched.batterySmartCard && errors.batterySmartCard && (
+                            <p className="text-red-500 text-xs mt-1">{errors.batterySmartCard}</p>
+                        )}
                     </div>
                 </div>
 
@@ -481,6 +496,9 @@ const RiderForm: React.FC<RiderFormProps> = ({
                             triggerFileInput={triggerFileInput}
                             removeUploadedFile={removeUploadedFile}
                         />
+                        {touched.picture && errors.picture && (
+                            <p className="text-red-500 text-xs mt-1">{errors.picture}</p>
+                        )}
                     </div>
                 </div>
 

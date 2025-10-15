@@ -190,9 +190,6 @@ router.post('/check-order-status', auth, async (req, res) => {
 
     const url = `${baseUrl}/subscriptions/v2/order/${merchantOrderId}/status?details=true`;
 
-    console.log('Checking PhonePe order status for:', merchantOrderId);
-    console.log('Using URL:', url);
-
     const response = await axios.get(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -202,7 +199,6 @@ router.post('/check-order-status', auth, async (req, res) => {
     });
 
     const orderStatus = response.data;
-    console.log('PhonePe order status response:', orderStatus);
 
     // Update the autopay record with latest status
     const autopayRecord = await PhonePeAutopay.findOne({ merchantOrderId });
@@ -254,12 +250,6 @@ async function generatePhonePeAuthToken() {
     const clientVersion = 1;
     const grantType = 'client_credentials';
 
-    console.log('PhonePe auth request:', {
-      clientId,
-      clientVersion,
-      grantType,
-      hasSecret: !!clientSecret
-    });
 
     const authData = new URLSearchParams();
     authData.append('client_id', clientId);
@@ -269,7 +259,6 @@ async function generatePhonePeAuthToken() {
 
     // Use the same auth URL as in riders.js
     const authUrl = 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
-    console.log('PhonePe auth URL:', authUrl);
 
     const authResponse = await axios.post(authUrl, authData, {
       headers: {
@@ -277,10 +266,8 @@ async function generatePhonePeAuthToken() {
       }
     });
 
-    console.log('PhonePe auth response:', authResponse.status, authResponse.data);
 
     if (authResponse.data && authResponse.data.access_token) {
-      console.log('PhonePe auth token generated successfully');
       return authResponse.data.access_token;
     } else {
       throw new Error('Invalid response from PhonePe authorization API');

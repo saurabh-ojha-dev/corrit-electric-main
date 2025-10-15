@@ -14,6 +14,8 @@ export interface ValidationErrors {
     address?: string;
     bankAccountNumber?: string;
     batterySmartCard?: string;
+    addressProof?: string;
+    picture?: string;
 }
 
 export interface UploadedFile {

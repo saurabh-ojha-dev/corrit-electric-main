@@ -135,10 +135,9 @@ router.post('/', [
       controllerNumber
     } = req.body;
 
-    // Check if vehicle with same details already exists
+    // Check if vehicle with same details already exists (excluding vehicleName)
     const existingVehicle = await Vehicle.findOne({
       $or: [
-        { vehicleName: vehicleName.toUpperCase() },
         { vehicleRegistrationNumber: vehicleRegistrationNumber.toUpperCase() },
         { vehicleChassisNumber: vehicleChassisNumber.toUpperCase() },
         { vehicleMotorNumber: vehicleMotorNumber.toUpperCase() },
@@ -211,9 +210,9 @@ router.put('/:id', [
       });
     }
 
-    // Check for duplicate values if updating unique fields
+    // Check for duplicate values if updating unique fields (excluding vehicleName)
     const updateData = { ...req.body };
-    const uniqueFields = ['vehicleName', 'vehicleRegistrationNumber', 'vehicleChassisNumber', 'vehicleMotorNumber', 'iotImeiNumber', 'controllerNumber'];
+    const uniqueFields = ['vehicleRegistrationNumber', 'vehicleChassisNumber', 'vehicleMotorNumber', 'iotImeiNumber', 'controllerNumber'];
     
     for (const field of uniqueFields) {
       if (updateData[field]) {
