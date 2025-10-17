@@ -58,8 +58,6 @@ router.post("/phonepe", async (req, res) => {
   try {
     const { event, payload } = req.body;
 
-    console.log("Received PhonePe webhook:", { event, payload });
-
     // Handle different webhook events
     switch (event) {
       case "subscription.setup.order.completed":
@@ -117,7 +115,6 @@ router.post("/phonepe", async (req, res) => {
         break;
 
       default:
-        console.log("Unhandled webhook event:", event);
     }
 
     res.json({ success: true, message: "Webhook processed successfully" });
@@ -209,7 +206,6 @@ async function handleSubscriptionSetupCompleted(payload) {
       actionRequired: false,
     });
 
-    console.log("Subscription setup completed for rider:", rider.riderId);
   } catch (error) {
     console.error("Error handling subscription setup completed:", error);
   }
@@ -257,7 +253,6 @@ async function handleSubscriptionSetupFailed(payload) {
       actionRequired: true,
     });
 
-    console.log("Subscription setup failed for rider:", rider.riderId);
   } catch (error) {
     console.error("Error handling subscription setup failed:", error);
   }
@@ -522,23 +517,18 @@ async function handleRedemptionOrderFailed(payload) {
 
 // Handle notification events
 async function handleSubscriptionNotificationCompleted(payload) {
-  console.log("Subscription notification completed:", payload);
 }
 
 async function handleSubscriptionNotificationFailed(payload) {
-  console.log("Subscription notification failed:", payload);
 }
 
 async function handleRedemptionTransactionCompleted(payload) {
-  console.log("Redemption transaction completed:", payload);
 }
 
 async function handleRedemptionTransactionFailed(payload) {
-  console.log("Redemption transaction failed:", payload);
 }
 
 async function handleRefundEvent(event, payload) {
-  console.log("Refund event:", event, payload);
 }
 
 // Helper functions
@@ -599,7 +589,6 @@ router.post("/", async (req, res) => {
         "Webhooks route - use /api/webhooks/phonepe for PhonePe webhooks",
     });
   } catch (error) {
-    console.error("Error handling webhook:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });

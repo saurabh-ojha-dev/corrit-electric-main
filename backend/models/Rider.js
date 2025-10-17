@@ -21,7 +21,6 @@ const riderSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true,
     validate: {
@@ -196,7 +195,6 @@ const riderSchema = new mongoose.Schema({
 
 // Indexes for better query performance
 riderSchema.index({ riderId: 1 });
-riderSchema.index({ email: 1 });
 riderSchema.index({ phone: 1 });
 riderSchema.index({ upiId: 1 });
 riderSchema.index({ mandateStatus: 1 });

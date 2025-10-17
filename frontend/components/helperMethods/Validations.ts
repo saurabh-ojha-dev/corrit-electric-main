@@ -35,22 +35,23 @@ const validateAddress = (value: string): string | undefined => {
 };
 
 const validateAadhaarCard = (value: string, uploadedFiles: Record<string, UploadedFile>): string | undefined => {
-    if (!value.trim() && !uploadedFiles.aadhaar) return 'Aadhaar card number or document is required';
-    if (value.trim() && !/^\d{12}$/.test(value.trim())) return 'Aadhaar card number must be 12 digits';
+    if (!uploadedFiles.aadhaar && (!value.trim() || !/^\d{12}$/.test(value.trim()))) {
+        return 'Aadhaar card number or document is required';
+    }
     return undefined;
 };
 
 const validatePanCard = (value: string, uploadedFiles: Record<string, UploadedFile>): string | undefined => {
-    if (!value.trim() && !uploadedFiles.pan) return 'PAN card number or document is required';
-    if (value.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value.trim().toUpperCase())) {
-        return 'Please enter a valid PAN card number (e.g., ABCDE1234F)';
+    if (!uploadedFiles.pan && (!value.trim() || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value.trim().toUpperCase()))) {
+        return 'PAN card number or document is required';
     }
     return undefined;
 };
 
 const validateBankAccountNumber = (value: string, uploadedFiles: Record<string, UploadedFile>): string | undefined => {
-    if (!value.trim() && !uploadedFiles.bankProof) return 'Bank account number or document is required';
-    if (value.trim() && !/^\d{9,18}$/.test(value.trim())) return 'Bank account number must be 9-18 digits';
+    if (!uploadedFiles.bankProof && (!value.trim() || !/^\d{9,18}$/.test(value.trim()))) {
+        return 'Bank account number or document is required';
+    }
     return undefined;
 };
 

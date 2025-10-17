@@ -59,10 +59,8 @@ const AddVehicle: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) =>
         e.preventDefault();
 
         try {
-            console.log("sending data", formData);
             // Send form data directly as it matches the backend structure
             const response = await apiClient.post(API_ENDPOINTS.VEHICLES.CREATE, formData);
-            console.log("get response", response);
 
             if (response.data.success) {
                 toast.success('Vehicle created successfully!');

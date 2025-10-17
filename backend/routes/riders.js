@@ -234,14 +234,6 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
     } = req.body;
 
     // Check for existing rider with specific field validation
-    const existingEmail = await Rider.findOne({ email });
-    if (existingEmail) {
-      return res.status(409).json({
-        success: false,
-        message: 'A rider with this email address already exists'
-      });
-    }
-
     const existingPhone = await Rider.findOne({ phone });
     if (existingPhone) {
       return res.status(409).json({
@@ -507,13 +499,6 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
     const grantType = process.env.PHONEPE_GRANT_TYPE || process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE || 'client_credentials';
 
     if (!clientId || !clientSecret) {
-      console.log('PhonePe credentials not configured, cancelling mandate locally only');
-      console.log('Available env vars:', {
-        PHONEPE_CLIENT_ID: !!process.env.PHONEPE_CLIENT_ID,
-        PHONEPE_CLIENT_SECRET: !!process.env.PHONEPE_CLIENT_SECRET,
-        NEXT_PUBLIC_PHONEPE_CLIENT_ID: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID,
-        NEXT_PUBLIC_PHONEPE_CLIENT_SECRET: !!process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET
-      });
 
       // Update rider mandate status to cancelled locally
       await Rider.findByIdAndUpdate(id, {
@@ -550,14 +535,6 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
 
     let authResponse;
     try {
-      console.log('PhonePe Auth Request:', {
-        url: process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token',
-        client_id: clientId,
-        client_version: clientVersion,
-        grant_type: grantType,
-        has_secret: !!clientSecret
-      });
-
       // Get PhonePe access token first
       const authData = new URLSearchParams();
       authData.append('client_id', clientId);
@@ -571,9 +548,6 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
         }
       });
 
-      console.log('PhonePe Auth Response Status:', authResponse.status);
-      console.log('PhonePe Auth Response Data:', authResponse.data);
-
       if (!authResponse.data.access_token) {
         console.error('PhonePe auth failed - no access token:', authResponse.data);
         return res.status(500).json({
@@ -583,7 +557,6 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
         });
       }
 
-      console.log('PhonePe access token obtained successfully');
     } catch (authError) {
       console.error('PhonePe authentication error:', authError.response?.data || authError.message);
 
@@ -608,7 +581,6 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
       : 'https://api.phonepe.com/apis/pg';
 
     try {
-      console.log('Attempting to cancel PhonePe subscription:', rider.mandateDetails.merchantSubscriptionId);
 
       const cancelResponse = await axios.post(
         `${phonepeBaseUrl}/subscriptions/v2/${rider.mandateDetails.merchantSubscriptionId}/cancel`,
@@ -621,15 +593,8 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
         }
       );
 
-      console.log('PhonePe cancel response status:', cancelResponse.status);
-
       // PhonePe returns 204 No Content for successful cancellation
       if (cancelResponse.status === 204) {
-        console.log('PhonePe subscription cancelled successfully (204 No Content)');
-      } else {
-        console.log('PhonePe cancel response data:', cancelResponse.data);
-      }
-
       // Update rider mandate status to cancelled
       await Rider.findByIdAndUpdate(id, {
         mandateStatus: 'cancelled',
@@ -659,6 +624,7 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
         phonepeStatus: cancelResponse.status,
         phonepeResponse: cancelResponse.status === 204 ? 'Subscription cancelled (204 No Content)' : cancelResponse.data
       });
+      }
     } catch (phonepeError) {
       console.error('PhonePe cancel error:', phonepeError.response?.data || phonepeError.message);
 
@@ -790,13 +756,6 @@ router.post('/phonepe-auth', auth, async (req, res) => {
       });
     }
 
-    console.log('PhonePe auth request:', {
-      clientId,
-      clientVersion,
-      grantType,
-      hasSecret: !!clientSecret
-    });
-
     const axios = require('axios');
     const authData = new URLSearchParams();
     authData.append('client_id', clientId);
@@ -806,15 +765,12 @@ router.post('/phonepe-auth', auth, async (req, res) => {
 
     // Use consistent environment detection
     const authUrl = 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
-    console.log('PhonePe auth URL:', authUrl);
 
     const authResponse = await axios.post(authUrl, authData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
-
-    console.log('PhonePe auth response:', authResponse.status, authResponse.data);
 
     res.json({
       success: true,
@@ -858,14 +814,6 @@ router.post('/phonepe-subscription-setup', auth, async (req, res) => {
       });
     }
 
-    console.log('PhonePe subscription setup request:', {
-      hasToken: !!access_token,
-      merchantOrderId: subscriptionData.merchantOrderId,
-      amount: subscriptionData.amount,
-      tokenLength: access_token?.length,
-      tokenPreview: access_token?.substring(0, 50) + '...'
-    });
-
     const axios = require('axios');
     // Use the same base URL pattern as auth endpoint for consistency
     // Check if we're in development/sandbox mode
@@ -879,19 +827,11 @@ router.post('/phonepe-subscription-setup', auth, async (req, res) => {
 
 
     const subscriptionUrl ='https://api.phonepe.com/apis/pg/subscriptions/v2/setup';
-    console.log('PhonePe subscription setup URL:', subscriptionUrl);
-    // console.log('Environment detection:', { isProduction, authUrl, NODE_ENV: process.env.NODE_ENV });
 
     const headers = {
       'Authorization': `O-Bearer ${access_token}`,
       'Content-Type': 'application/json'
     };
-
-    console.log('PhonePe subscription headers:', {
-      authorizationLength: headers.Authorization?.length,
-      authorizationPreview: headers.Authorization?.substring(0, 20) + '...',
-      contentType: headers['Content-Type']
-    });
 
     // Send the subscriptionData directly to PhonePe (not wrapped in subscriptionData)
     const subscriptionResponse = await axios.post(
@@ -901,8 +841,6 @@ router.post('/phonepe-subscription-setup', auth, async (req, res) => {
         headers
       }
     );
-
-    console.log('PhonePe subscription setup response:', subscriptionResponse.status, subscriptionResponse.data);
 
     res.json({
       success: true,

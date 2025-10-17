@@ -113,13 +113,11 @@ const AssignVehicle: React.FC<AssignVehicleProps> = ({
             setIsSubmitting(true);
             
             if (mode === 'assign') {
-                console.log("assigning vehicle", vehicle._id, "to rider", formData.riderId);
                 
                 // Use the assign endpoint
                 const response = await apiClient.post(API_ENDPOINTS.VEHICLES.ASSIGN(vehicle._id), {
                     riderId: formData.riderId
                 });
-                console.log("assignment response", response);
 
                 if (response.data.success) {
                     toast.success('Vehicle assigned successfully!');
@@ -137,11 +135,9 @@ const AssignVehicle: React.FC<AssignVehicleProps> = ({
                 }
             } else {
                 // Unassign mode
-                console.log("unassigning vehicle", vehicle._id);
                 
                 // Use the unassign endpoint
                 const response = await apiClient.post(API_ENDPOINTS.VEHICLES.UNASSIGN(vehicle._id));
-                console.log("unassignment response", response);
 
                 if (response.data.success) {
                     toast.success('Vehicle unassigned successfully!');

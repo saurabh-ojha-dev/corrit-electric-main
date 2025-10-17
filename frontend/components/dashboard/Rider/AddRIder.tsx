@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import { apiClient, API_ENDPOINTS } from '@/utils/api'
-import { validateField } from '../../helperMethods/Validations'
+// Removed validateField import - using simple inline validation
 import { AddRiderProps, ValidationErrors, UploadedFile } from '../../helperMethods/interface'
 import RiderForm from './RiderForm'
 
@@ -33,58 +33,77 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {};
 
-        Object.keys(formData).forEach(key => {
-            if (key !== 'gender') {
-                const error = validateField(key, formData[key as keyof typeof formData], uploadedFiles);
-                if (error) {
-                    newErrors[key as keyof ValidationErrors] = error;
-                }
+        // Simple validation for all required fields
+        if (!formData.fullName.trim()) {
+            newErrors.fullName = 'Full name is required';
+        }
+
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+            newErrors.email = 'Please enter a valid email address';
+        }
+
+        if (!formData.upiId.trim()) {
+            newErrors.upiId = 'UPI ID is required';
+        } else if (!/^[a-zA-Z0-9._-]+@[a-zA-Z]+$/.test(formData.upiId.trim())) {
+            newErrors.upiId = 'Please enter a valid UPI ID (e.g., username@provider)';
+        }
+
+        if (!formData.phoneNumber.trim()) {
+            newErrors.phoneNumber = 'Phone number is required';
+        } else if (!/^[6-9]\d{9}$/.test(formData.phoneNumber.trim())) {
+            newErrors.phoneNumber = 'Please enter a valid 10-digit mobile number';
+        }
+
+        if (!formData.address.trim()) {
+            newErrors.address = 'Address is required';
+        } else if (formData.address.trim().length < 10) {
+            newErrors.address = 'Address must be at least 10 characters';
+        }
+
+        if (!formData.weeklyRentAmount.trim()) {
+            newErrors.weeklyRentAmount = 'Weekly rent amount is required';
+        } else {
+            const amount = parseFloat(formData.weeklyRentAmount);
+            if (isNaN(amount) || amount < 100) {
+                newErrors.weeklyRentAmount = 'Weekly rent amount must be at least ₹100';
+            } else if (amount > 10000) {
+                newErrors.weeklyRentAmount = 'Weekly rent amount cannot exceed ₹10,000';
             }
-        });
+        }
 
-        console.log('File upload validation - Uploaded files:', uploadedFiles);
-        console.log('File upload validation - Form data:', formData);
+        if (!uploadedFiles.aadhaar) {
+            newErrors.aadhaarCard = 'Please upload Aadhaar document';
+        } else if (formData.aadhaarCard.trim() && !/^\d{12}$/.test(formData.aadhaarCard.trim())) {
+            newErrors.aadhaarCard = 'Aadhaar card number must be 12 digits';
+        }
 
-        // Additional validation for required file uploads
-        if (!uploadedFiles.aadhaar && !formData.aadhaarCard.trim()) {
-            newErrors.aadhaarCard = 'Please upload Aadhaar document or enter the card number';
+        if (!uploadedFiles.pan) {
+            newErrors.panCard = 'Please upload PAN document';
+        } else if (formData.panCard.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panCard.trim().toUpperCase())) {
+            newErrors.panCard = 'Please enter a valid PAN card number (e.g., ABCDE1234F)';
         }
-        
-        if (!uploadedFiles.pan && !formData.panCard.trim()) {
-            newErrors.panCard = 'Please upload PAN document or enter the card number';
+
+        if (!uploadedFiles.bankProof) {
+            newErrors.bankAccountNumber = 'Please upload bank passbook document';
+        } else if (formData.bankAccountNumber.trim() && !/^\d{9,18}$/.test(formData.bankAccountNumber.trim())) {
+            newErrors.bankAccountNumber = 'Bank account number must be 9-18 digits';
         }
-        
-        if (!uploadedFiles.bankProof && !formData.bankAccountNumber.trim()) {
-            newErrors.bankAccountNumber = 'Please upload bank passbook or enter account number';
-        }
-        
+
         if (!uploadedFiles.addressProof) {
             newErrors.addressProof = 'Please upload address proof document (electricity bill)';
         }
-        
+
         if (!uploadedFiles.picture) {
             newErrors.picture = 'Please upload profile picture';
         }
-        
-        // Validate that if text input is provided, the format should be correct
-        if (formData.aadhaarCard.trim() && !/^\d{12}$/.test(formData.aadhaarCard.trim())) {
-            newErrors.aadhaarCard = 'Aadhaar card number must be 12 digits';
-        }
-        
-        if (formData.panCard.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panCard.trim().toUpperCase())) {
-            newErrors.panCard = 'Please enter a valid PAN card number (e.g., ABCDE1234F)';
-        }
-        
-        if (formData.bankAccountNumber.trim() && !/^\d{9,18}$/.test(formData.bankAccountNumber.trim())) {
-            newErrors.bankAccountNumber = 'Bank account number must be 9-18 digits';
-        }
-        
-        // Validate battery card if provided (optional field)
+
+        // Optional battery card validation
         if (uploadedFiles.batteryCard && !formData.batterySmartCard.trim()) {
             newErrors.batterySmartCard = 'Battery smart card number is required when document is uploaded';
         }
 
-        console.log('Validation errors found:', newErrors);
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -148,7 +167,6 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                 toast.error(response.data.message || 'Upload failed');
             }
         } catch (error: any) {
-            console.error('Upload error:', error);
             toast.error(error.response?.data?.message || 'Failed to upload file');
         } finally {
             setUploadingFiles(prev => ({ ...prev, [documentType]: false }));
@@ -215,36 +233,87 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                 [name]: undefined
             }));
         }
-        
-        // Clear related file upload errors when text input is provided
-        if (name === 'aadhaarCard' && value.trim() && uploadedFiles.aadhaar) {
-            setErrors(prev => ({
-                ...prev,
-                aadhaarCard: undefined
-            }));
-        } else if (name === 'panCard' && value.trim() && uploadedFiles.pan) {
-            setErrors(prev => ({
-                ...prev,
-                panCard: undefined
-            }));
-        } else if (name === 'bankAccountNumber' && value.trim() && uploadedFiles.bankProof) {
-            setErrors(prev => ({
-                ...prev,
-                bankAccountNumber: undefined
-            }));
-        } else if (name === 'batterySmartCard' && value.trim() && uploadedFiles.batteryCard) {
-            setErrors(prev => ({
-                ...prev,
-                batterySmartCard: undefined
-            }));
-        }
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setTouched(prev => ({ ...prev, [name]: true }));
 
-        const error = validateField(name, value, uploadedFiles);
+        // Simple field validation on blur
+        let error: string | undefined;
+        
+        switch (name) {
+            case 'fullName':
+                if (!value.trim()) error = 'Full name is required';
+                break;
+            case 'email':
+                if (!value.trim()) {
+                    error = 'Email is required';
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+                    error = 'Please enter a valid email address';
+                }
+                break;
+            case 'upiId':
+                if (!value.trim()) {
+                    error = 'UPI ID is required';
+                } else if (!/^[a-zA-Z0-9._-]+@[a-zA-Z]+$/.test(value.trim())) {
+                    error = 'Please enter a valid UPI ID (e.g., username@provider)';
+                }
+                break;
+            case 'phoneNumber':
+                if (!value.trim()) {
+                    error = 'Phone number is required';
+                } else if (!/^[6-9]\d{9}$/.test(value.trim())) {
+                    error = 'Please enter a valid 10-digit mobile number';
+                }
+                break;
+            case 'address':
+                if (!value.trim()) {
+                    error = 'Address is required';
+                } else if (value.trim().length < 10) {
+                    error = 'Address must be at least 10 characters';
+                }
+                break;
+            case 'weeklyRentAmount':
+                if (!value.trim()) {
+                    error = 'Weekly rent amount is required';
+                } else {
+                    const amount = parseFloat(value);
+                    if (isNaN(amount) || amount < 100) {
+                        error = 'Weekly rent amount must be at least ₹100';
+                    } else if (amount > 10000) {
+                        error = 'Weekly rent amount cannot exceed ₹10,000';
+                    }
+                }
+                break;
+            case 'aadhaarCard':
+                if (!uploadedFiles.aadhaar) {
+                    error = 'Please upload Aadhaar document';
+                } else if (value.trim() && !/^\d{12}$/.test(value.trim())) {
+                    error = 'Aadhaar card number must be 12 digits';
+                }
+                break;
+            case 'panCard':
+                if (!uploadedFiles.pan) {
+                    error = 'Please upload PAN document';
+                } else if (value.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value.trim().toUpperCase())) {
+                    error = 'Please enter a valid PAN card number (e.g., ABCDE1234F)';
+                }
+                break;
+            case 'bankAccountNumber':
+                if (!uploadedFiles.bankProof) {
+                    error = 'Please upload bank passbook document';
+                } else if (value.trim() && !/^\d{9,18}$/.test(value.trim())) {
+                    error = 'Bank account number must be 9-18 digits';
+                }
+                break;
+            case 'batterySmartCard':
+                if (uploadedFiles.batteryCard && !value.trim()) {
+                    error = 'Battery smart card number is required when document is uploaded';
+                }
+                break;
+        }
+
         setErrors(prev => ({
             ...prev,
             [name]: error
@@ -262,13 +331,7 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
             return acc;
         }, {} as Record<string, boolean>);
         
-        // Also mark file upload fields as touched
-        const fileUploadFields = ['aadhaar', 'pan', 'addressProof', 'bankProof', 'picture', 'batteryCard'];
-        fileUploadFields.forEach(field => {
-            allTouched[field] = true;
-        });
-        
-        // Also mark the corresponding text input fields as touched for validation display
+        // Mark all file upload and document fields as touched for validation display
         allTouched.aadhaarCard = true;
         allTouched.panCard = true;
         allTouched.bankAccountNumber = true;
@@ -278,14 +341,19 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
         
         setTouched(allTouched);
 
-        // Validate form
-        if (!validateForm()) {
-            console.log('Validation failed. Current errors:', errors);
-            console.log('Uploaded files:', uploadedFiles);
-            console.log('Form data:', formData);
+        // Validate form immediately
+        const isValid = validateForm();
+        
+        if (!isValid) {
             toast.error('Please fix the validation errors before submitting');
             return;
         }
+        
+        // If validation passes, proceed with submission
+        proceedWithSubmission();
+    };
+
+    const proceedWithSubmission = async () => {
 
         setIsLoading(true);
 
@@ -371,8 +439,6 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                 toast.error(response.data.message || 'Failed to create Rider');
             }
         } catch (error: any) {
-            console.error('Error creating Rider:', error);
-
             if (error.response?.status === 400) {
                 // Check if backend returned field-specific validation errors
                 if (error.response.data?.errors && typeof error.response.data.errors === 'object') {

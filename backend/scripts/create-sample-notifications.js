@@ -10,12 +10,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/corrit_el
 
 async function createSampleNotifications() {
   try {
-    console.log('Creating sample notifications...');
 
     // Get a sample rider
     const sampleRider = await Rider.findOne();
     if (!sampleRider) {
-      console.log('No riders found. Please create a rider first.');
       return;
     }
 
@@ -131,9 +129,6 @@ async function createSampleNotifications() {
       });
       await notification.save();
     }
-
-    console.log(`Created ${sampleNotifications.length} sample notifications`);
-    console.log('Sample notifications created successfully!');
     
   } catch (error) {
     console.error('Error creating sample notifications:', error);

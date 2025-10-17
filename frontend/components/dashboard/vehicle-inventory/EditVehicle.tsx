@@ -13,7 +13,6 @@ interface EditVehicleProps {
 }
 
 const EditVehicle: React.FC<EditVehicleProps> = ({ isModalOpen, setIsModalOpen, vehicle, onVehicleUpdated }) => {
-    console.log("vehicle", vehicle)
     const [formData, setFormData] = useState({
         vehicleName: '',
         vehicleRegistrationNumber: '',
@@ -75,11 +74,9 @@ const EditVehicle: React.FC<EditVehicleProps> = ({ isModalOpen, setIsModalOpen, 
 
         try {
             setIsSubmitting(true);
-            console.log("sending update data", formData);
             
             // Use PUT request to update vehicle
             const response = await apiClient.put(API_ENDPOINTS.VEHICLES.UPDATE(vehicle._id), formData);
-            console.log("update response", response);
 
             if (response.data.success) {
                 toast.success('Vehicle updated successfully!');
@@ -96,7 +93,6 @@ const EditVehicle: React.FC<EditVehicleProps> = ({ isModalOpen, setIsModalOpen, 
                 toast.error(response.data.message || 'Failed to update vehicle');
             }
         } catch (error: any) {
-            console.error('Error updating vehicle:', error);
             const errorMessage = error.response?.data?.message || 'Failed to update vehicle';
             toast.error(errorMessage);
         } finally {

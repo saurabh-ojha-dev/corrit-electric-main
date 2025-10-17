@@ -308,9 +308,6 @@ const RiderForm: React.FC<RiderFormProps> = ({
                                 </div>
                             )}
                         </div>
-                        {touched.panCard && errors.panCard && (
-                            <p className="text-red-500 text-xs mt-1">{errors.panCard}</p>
-                        )}
 
                         {/* Pan Card File Upload */}
                         <RiderFileUpload
