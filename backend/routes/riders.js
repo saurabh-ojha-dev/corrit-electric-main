@@ -280,7 +280,7 @@ router.post('/', [auth, roleCheck(['Superadmin', 'admin']), validateRider], asyn
         merchantSubscriptionId: req.body.merchantSubscriptionId,
         amount: parseFloat(weeklyRentAmount) * 100,
         maxAmount: parseFloat(weeklyRentAmount) * 100,
-        frequency: 'on_demand',
+        frequency: 'weekly',
         authWorkflowType: 'TRANSACTION',
         amountType: 'FIXED'
       }

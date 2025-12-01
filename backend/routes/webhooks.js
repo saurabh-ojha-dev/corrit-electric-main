@@ -413,12 +413,12 @@ async function handleRedemptionOrderCompleted(payload) {
           mandateDetails: {
             startDate: new Date(),
             endDate: new Date(paymentFlow.validUpto),
-            frequency: 'on_demand',
+            frequency: 'weekly',
             maxAmount: amount
           },
           phonepeResponse: payload,
           isRecurring: true,
-          nextDebitDate: calculateNextDebitDate('on_demand'),
+          nextDebitDate: calculateNextDebitDate('weekly'),
           lastDebitDate: new Date(),
           totalDebits: 1,
           totalAmount: amount,
@@ -481,7 +481,7 @@ async function handleRedemptionOrderFailed(payload) {
           mandateDetails: {
             startDate: new Date(),
             endDate: new Date(paymentFlow.validUpto),
-            frequency: 'on_demand',
+            frequency: 'weekly',
             maxAmount: amount
           },
           phonepeResponse: payload,

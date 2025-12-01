@@ -384,7 +384,7 @@ const AddRider: React.FC<AddRiderProps> = ({ isModalOpen, setIsModalOpen }) => {
                             authWorkflowType: "TRANSACTION",
                             amountType: "FIXED",
                             maxAmount: parseFloat(formData.weeklyRentAmount) * 100, // FIXED: maxAmount must equal amount
-                            frequency: "ON_DEMAND",
+                            frequency: "WEEKLY",
                             expireAt: Date.now() + (365 * 24 * 60 * 60 * 1000), // 1 year from now
                             paymentMode: {
                                 type: "UPI_COLLECT",
