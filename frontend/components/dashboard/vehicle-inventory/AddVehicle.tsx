@@ -73,6 +73,8 @@ const AddVehicle: React.FC<AddAdminProps> = ({ isModalOpen, setIsModalOpen }) =>
                     iotImeiNumber: '',
                     controllerNumber: '',
                 });
+                // Dispatch custom event to refresh the vehicle list
+                window.dispatchEvent(new CustomEvent('vehicleCreated'));
             } else {
                 toast.error(response.data.message || 'Failed to create vehicle');
             }

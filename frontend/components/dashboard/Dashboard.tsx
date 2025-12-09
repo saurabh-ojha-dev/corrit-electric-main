@@ -19,9 +19,22 @@ import {
     ComposedChart
 } from 'recharts'
 import DashboardStatusGrid from './DashboardStatusGrid'
+import { apiClient } from '@/utils/api'
+import { API_ENDPOINTS } from '@/utils/api'
+
+interface ForecastData {
+    day: number;
+    base: number;
+    top: number;
+    mandates: number;
+    failed: number;
+}
 
 const Dashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
+    const [chartData, setChartData] = useState<ForecastData[]>([]);
+    const [predictedMonthlyCollection, setPredictedMonthlyCollection] = useState(0);
+    const [lastUpdated, setLastUpdated] = useState<string>('');
     const router = useRouter();
     const { getFirstLetter, loading, profile } = useAdminProfile();
 
@@ -34,6 +47,42 @@ const Dashboard = () => {
         setIsLoading(false);
     }, [router])
 
+    useEffect(() => {
+        const fetchForecastData = async () => {
+            try {
+                const response = await apiClient.get(API_ENDPOINTS.DASHBOARD.FORECAST);
+                if (response.data.success) {
+                    setChartData(response.data.forecast);
+                    
+                    // Calculate predicted monthly collection from forecast
+                    const totalCollection = response.data.forecast.reduce((sum: number, day: ForecastData) => {
+                        return sum + day.base + day.top;
+                    }, 0);
+                    setPredictedMonthlyCollection(totalCollection);
+                }
+            } catch (error) {
+                console.error('Error fetching forecast data:', error);
+            }
+        };
+
+        if (!isLoading) {
+            fetchForecastData();
+            // Update last updated timestamp
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            const formattedTime = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            setLastUpdated(`Last updated ${formattedDate} ${formattedTime}`);
+        }
+    }, [isLoading]);
+
     if (isLoading) {
         return (
             <div className="flex w-full h-full bg-[#F8F8F8] items-center justify-center">
@@ -45,24 +94,11 @@ const Dashboard = () => {
         )
     }
 
-    // Chart data for Recharts
-    const chartData = [
-        { day: 2, base: 550, top: 100, mandates: 800, failed: 550 },
-        { day: 4, base: 580, top: 120, mandates: 900, failed: 580 },
-        { day: 6, base: 600, top: 200, mandates: 980, failed: 600 },
-        { day: 8, base: 620, top: 230, mandates: 1050, failed: 620 },
-        { day: 10, base: 650, top: 250, mandates: 1150, failed: 650 },
-        { day: 12, base: 670, top: 330, mandates: 1250, failed: 670 },
-        { day: 14, base: 700, top: 350, mandates: 1300, failed: 700 },
-        { day: 16, base: 720, top: 380, mandates: 1400, failed: 720 },
-        { day: 18, base: 750, top: 400, mandates: 1450, failed: 750 },
-        { day: 20, base: 780, top: 470, mandates: 1500, failed: 780 },
-        { day: 22, base: 800, top: 550, mandates: 1550, failed: 800 },
-        { day: 24, base: 820, top: 630, mandates: 1600, failed: 820 },
-        { day: 26, base: 850, top: 750, mandates: 1800, failed: 850 },
-        { day: 28, base: 880, top: 970, mandates: 2100, failed: 880 },
-        { day: 30, base: 900, top: 1150, mandates: 2450, failed: 900 }
-    ];
+    // Calculate max value for Y-axis
+    const maxValue = chartData.length > 0 
+        ? Math.max(...chartData.map(d => Math.max(d.base + d.top, d.mandates, d.failed)))
+        : 2500;
+    const yAxisMax = Math.ceil(maxValue / 500) * 500; // Round up to nearest 500
 
     return (
         <div className="flex h-full bg-[#F8F8F8] ml-2 lg:ml-5 w-full">
@@ -75,8 +111,12 @@ const Dashboard = () => {
                     <div className="flex flex-col items-start justify-start gap-2">
                         <h1 className="text-xl lg:text-2xl font-semibold text-black border-b-2 border-[#E51E25] pb-1">Dashboard</h1>
                         <p className="text-sm lg:text-lg font-normal text-black">Overview of your bike rental business
-                            <span className='text-[#595959] font-normal pl-2'>|</span>
-                            <span className='text-[#595959] font-normal pl-2'>Last updated Aug 12, 2025 AM17545109692 10:11</span>
+                            {lastUpdated && (
+                                <>
+                                    <span className='text-[#595959] font-normal pl-2'>|</span>
+                                    <span className='text-[#595959] font-normal pl-2'>{lastUpdated}</span>
+                                </>
+                            )}
                         </p>
                     </div>
 
@@ -145,8 +185,9 @@ const Dashboard = () => {
 
                                 {/* Graph Container */}
                                 <div className="bg-white border border-[#0000001A] rounded-2xl p-3 lg:p-4" style={{ height: '280px', minHeight: '280px' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                    {chartData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                             <XAxis
                                                 dataKey="day"
@@ -158,8 +199,8 @@ const Dashboard = () => {
                                                 tick={{ fontSize: 10, fill: '#6B7280' }}
                                                 axisLine={false}
                                                 tickLine={false}
-                                                domain={[0, 2500]}
-                                                ticks={[0, 500, 1000, 1500, 2000, 2500]}
+                                                domain={[0, yAxisMax]}
+                                                ticks={Array.from({ length: Math.floor(yAxisMax / 500) + 1 }, (_, i) => i * 500)}
                                             />
                                             <Tooltip />
                                             <Bar dataKey="base" stackId="a" fill="#22C55E" barSize={20} />
@@ -181,6 +222,11 @@ const Dashboard = () => {
                                             />
                                         </ComposedChart>
                                     </ResponsiveContainer>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full">
+                                            <p className="text-gray-500">Loading chart data...</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -207,8 +253,13 @@ const Dashboard = () => {
                                 {/* Predicted Monthly Collection Card */}
                                 <div className="bg-white border border-[#0000001A] rounded-2xl p-3 lg:p-4">
                                     <h4 className="text-sm lg:text-base font-semibold text-black mb-2">Predicted Monthly Collection</h4>
-                                    <div className="text-xl lg:text-2xl font-bold text-green-600 mb-1">₹3,20,000</div>
-                                    <p className="text-xs text-black">Slight growth expected from last month's ₹2,45,000.</p>
+                                    <div className="text-xl lg:text-2xl font-bold text-green-600 mb-1">
+                                        {predictedMonthlyCollection > 0 
+                                            ? `₹${(predictedMonthlyCollection / 100).toLocaleString('en-IN')}`
+                                            : '₹0'
+                                        }
+                                    </div>
+                                    <p className="text-xs text-black">Based on forecast for next 30 days.</p>
                                 </div>
                             </div>
                         </div>

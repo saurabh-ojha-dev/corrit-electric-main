@@ -108,6 +108,10 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `${API_BASE_URL}/api/notifications/${id}`,
     TYPES: `${API_BASE_URL}/api/notifications/types`,
     CREATE_TEST: `${API_BASE_URL}/api/notifications/create-test`,
+  },
+  DASHBOARD: {
+    STATS: `${API_BASE_URL}/api/dashboard/stats`,
+    FORECAST: `${API_BASE_URL}/api/dashboard/forecast`,
   }
 }
 

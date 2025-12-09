@@ -542,7 +542,7 @@ function calculateNextDebitDate(frequency) {
     case "on_demand":
       return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days for on_demand
     default:
-      return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // Default to 3 days
+      return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // Default to 7 days
   }
 }
 
