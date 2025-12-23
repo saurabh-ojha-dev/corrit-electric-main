@@ -55,6 +55,10 @@ const validateWebhook = (req, res, next) => {
 // @desc    Handle PhonePe subscription webhooks
 // @access  Public (but validated)
 router.post("/phonepe", async (req, res) => {
+  console.log("📥📥📥 PHONEPE WEBHOOK HIT 📥📥📥");
+  console.log("Time:", new Date().toISOString());
+  console.log("Headers:", req.headers);
+  console.log("Raw Body:", JSON.stringify(req.body, null, 2));
   try {
     const { event, payload } = req.body;
 
@@ -350,7 +354,7 @@ async function handleSubscriptionCancelled(payload) {
   try {
     // Handle both old and new payload structures
     const merchantSubscriptionId = payload.merchantSubscriptionId || payload.paymentFlow?.merchantSubscriptionId;
-    
+
     if (!merchantSubscriptionId) {
       console.error('No merchantSubscriptionId found in payload:', payload);
       return;
@@ -389,7 +393,7 @@ async function handleRedemptionOrderCompleted(payload) {
 
     // Find existing autopay record or create new one
     let autopay = await PhonePeAutopay.findOne({ merchantOrderId });
-    
+
     if (!autopay) {
       // Create new autopay record for redemption
       const rider = await Rider.findOne({
@@ -430,7 +434,7 @@ async function handleRedemptionOrderCompleted(payload) {
         await Notification.create({
           type: "payment_success",
           title: `Payment Successful – ${rider.riderId}`,
-          description: `Weekly payment of ₹${amount/100} processed successfully. UTR: ${paymentDetails?.[0]?.rail?.utr}`,
+          description: `Weekly payment of ₹${amount / 100} processed successfully. UTR: ${paymentDetails?.[0]?.rail?.utr}`,
           riderId: rider._id,
           priority: "low",
           actionRequired: false,
@@ -456,7 +460,7 @@ async function handleRedemptionOrderFailed(payload) {
 
     // Find existing autopay record or create new one for failed payment
     let autopay = await PhonePeAutopay.findOne({ merchantOrderId });
-    
+
     if (!autopay) {
       // Create new autopay record for failed redemption
       const rider = await Rider.findOne({
@@ -496,7 +500,7 @@ async function handleRedemptionOrderFailed(payload) {
         await Notification.create({
           type: "payment_failed",
           title: `Payment Failed – ${rider.riderId}`,
-          description: `Weekly payment of ₹${amount/100} failed. Reason: ${getErrorMessage(errorCode, detailedErrorCode)}`,
+          description: `Weekly payment of ₹${amount / 100} failed. Reason: ${getErrorMessage(errorCode, detailedErrorCode)}`,
           riderId: rider._id,
           priority: "high",
           actionRequired: true,
