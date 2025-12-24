@@ -51,7 +51,7 @@ const validateWebhook = (req, res, next) => {
   }
 };
 
-// @route   POST /api/webhooks/phonepe
+// @route   POST /webhooks/phonepe
 // @desc    Handle PhonePe subscription webhooks
 // @access  Public (but validated)
 router.post("/phonepe", async (req, res) => {
@@ -567,7 +567,7 @@ function getErrorMessage(errorCode, detailedErrorCode) {
   );
 }
 
-// @route   GET /api/webhooks/test
+// @route   GET /webhooks/test
 // @desc    Test webhook endpoint
 // @access  Public
 router.get("/test", (req, res) => {
@@ -576,13 +576,13 @@ router.get("/test", (req, res) => {
     message: "Webhook endpoint is working",
     timestamp: new Date().toISOString(),
     endpoints: {
-      phonepe: "/api/webhooks/phonepe",
-      general: "/api/webhooks",
+      phonepe: "/webhooks/phonepe",
+      general: "/webhooks",
     },
   });
 });
 
-// @route   POST /api/webhooks
+// @route   POST /webhooks
 // @desc    Handle general web  hooks (legacy)
 // @access  Public
 router.post("/", async (req, res) => {
@@ -590,7 +590,7 @@ router.post("/", async (req, res) => {
     res.json({
       success: true,
       message:
-        "Webhooks route - use /api/webhooks/phonepe for PhonePe webhooks",
+        "Webhooks route - use /webhooks/phonepe for PhonePe webhooks",
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error" });
