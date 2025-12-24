@@ -53,7 +53,7 @@ app.use('/api/payments', phonePeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tracking', trackingRoutes);
-app.use('/api/webhooks', webhookRoutes);
+app.use('/webhooks', webhookRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/vehicles', vehicleRoutes);
