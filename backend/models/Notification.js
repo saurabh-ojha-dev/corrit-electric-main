@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema({
       'mandate_created',
       'mandate_failed',
       'mandate_activated',
+      'mandate_resent',
       'rider_approved'
     ],
     required: true
@@ -182,7 +183,9 @@ notificationSchema.virtual('typeIcon').get(function() {
     'payment_success': '✅',
     'payment_retry': '🔄',
     'mandate_created': '📋',
-    'mandate_failed': '❌'
+    'mandate_failed': '❌',
+    'mandate_activated': '✅',
+    'mandate_resent': '🔄'
   };
   return iconMap[this.type] || '🔔';
 });

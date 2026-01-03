@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Mail, Phone, Trash2, CheckCircle, XCircle, User, Loader2 } from 'lucide-react'
+import { Download, Mail, Phone, Trash2, CheckCircle, XCircle, User, Loader2, RefreshCcw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { apiClient, API_ENDPOINTS } from '@/utils/api'
 import { Rider } from '@/components/helperMethods/interface'
@@ -24,6 +24,7 @@ const Riders = () => {
     const [mandateStatusUpdates, setMandateStatusUpdates] = useState<Record<string, string>>({});
     const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
     const [cancellingMandate, setCancellingMandate] = useState<string | null>(null);
+    const [resendingMandate, setResendingMandate] = useState<string | null>(null);
     const router = useRouter();
 
     // Debounce search term
@@ -79,14 +80,14 @@ const Riders = () => {
 
             if (response.data.success) {
                 // Update the rider status in the list
-                setRiders(prevRiders => 
-                    prevRiders.map(r => 
-                        r._id === riderId 
+                setRiders(prevRiders =>
+                    prevRiders.map(r =>
+                        r._id === riderId
                             ? { ...r, mandateStatus: response.data.mandateStatus }
                             : r
                     )
                 );
-                
+
                 toast.success(`Mandate status updated: ${response.data.mandateStatus}`);
             } else {
                 toast.error(response.data.message || 'Failed to check mandate status');
@@ -115,16 +116,16 @@ const Riders = () => {
 
             if (response.data.success) {
                 // Update the rider status in the list
-                setRiders(prevRiders => 
-                    prevRiders.map(r => 
-                        r._id === riderId 
+                setRiders(prevRiders =>
+                    prevRiders.map(r =>
+                        r._id === riderId
                             ? { ...r, mandateStatus: 'cancelled' }
                             : r
                     )
                 );
-                
+
                 toast.success('Mandate cancelled successfully');
-                
+
                 // Show warning if PhonePe API failed
                 if (response.data.warning) {
                     toast.error(response.data.warning);
@@ -205,7 +206,7 @@ const Riders = () => {
                 ...prev,
                 [riderId]: mandateStatus
             }));
-            
+
             // Show notification for status change
             if (mandateStatus === 'active') {
                 toast.success(`Mandate activated for rider ${riderId}`);
@@ -225,28 +226,28 @@ const Riders = () => {
         const pollMandateStatus = async () => {
             try {
                 // Only poll if there are riders with pending mandates
-                const pendingRiders = riders.filter(rider => 
-                    rider.mandateStatus === 'pending' || 
+                const pendingRiders = riders.filter(rider =>
+                    rider.mandateStatus === 'pending' ||
                     rider.mandateStatus === 'PENDING'
                 );
-                
+
                 if (pendingRiders.length === 0) return;
 
                 // Check status for each pending rider
                 for (const rider of pendingRiders) {
                     try {
                         const response = await apiClient.get(API_ENDPOINTS.RIDERS.MANDATE_STATUS(rider._id));
-                        
+
                         if (response.data.success && response.data.mandateStatus !== rider.mandateStatus) {
                             // Status has changed, update the rider
-                            setRiders(prevRiders => 
-                                prevRiders.map(r => 
-                                    r._id === rider._id 
+                            setRiders(prevRiders =>
+                                prevRiders.map(r =>
+                                    r._id === rider._id
                                         ? { ...r, mandateStatus: response.data.mandateStatus }
                                         : r
                                 )
                             );
-                            
+
                             // Dispatch custom event
                             window.dispatchEvent(new CustomEvent('mandateStatusUpdate', {
                                 detail: {
@@ -266,7 +267,7 @@ const Riders = () => {
 
         // Poll every 30 seconds
         const interval = setInterval(pollMandateStatus, 30000);
-        
+
         // Initial poll
         pollMandateStatus();
 
@@ -397,7 +398,7 @@ const Riders = () => {
     const getMandateStatusBadge = (rider: Rider) => {
         const currentStatus = mandateStatusUpdates[rider.riderId] || rider.mandateStatus;
         const isUpdating = mandateStatusUpdates[rider.riderId] && mandateStatusUpdates[rider.riderId] !== rider.mandateStatus;
-        
+
         switch (currentStatus) {
             case 'active':
             case 'ACTIVE':
@@ -475,6 +476,71 @@ const Riders = () => {
                 </div>
             </div>
         )
+    }
+
+    const handleResendMandate = async (riderId: string) => {
+        try {
+            setResendingMandate(riderId);
+            const response = await apiClient.post(API_ENDPOINTS.RIDERS.RESEND_MANDATE(riderId));
+
+            if (response.data.success) {
+                // Update rider status to pending
+                setRiders(prevRiders =>
+                    prevRiders.map(r =>
+                        r._id === riderId
+                            ? { ...r, mandateStatus: 'pending' }
+                            : r
+                    )
+                );
+
+                // Show success message with redirect URL if available
+                const redirectUrl = response.data.redirectUrl;
+                if (redirectUrl) {
+                    toast.success(
+                        (t) => (
+                            <div className="flex flex-col gap-2">
+                                <span>New mandate link generated successfully!</span>
+                                <a
+                                    href={redirectUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 underline text-sm"
+                                    onClick={() => toast.dismiss(t.id)}
+                                >
+                                    Open Mandate Link
+                                </a>
+                            </div>
+                        ),
+                        { duration: 10000 }
+                    );
+                } else {
+                    toast.success('New mandate link generated successfully!');
+                }
+
+                // Create notification for admin
+                console.log('Mandate resent:', {
+                    merchantOrderId: response.data.merchantOrderId,
+                    redirectUrl: response.data.redirectUrl
+                });
+            } else {
+                toast.error(response.data.message || 'Failed to resend mandate');
+            }
+        } catch (error: any) {
+            console.error('Error resending mandate:', error);
+            if (error.response?.status === 401) {
+                toast.error('Authentication required. Please login again.');
+            } else if (error.response?.status === 400) {
+                const errorMessage = error.response?.data?.message || 'Invalid request';
+                toast.error(errorMessage);
+            } else if (error.response?.status === 404) {
+                toast.error('Rider not found');
+            } else {
+                const errorMessage = error.response?.data?.message || 'Failed to resend mandate';
+                toast.error(errorMessage);
+            }
+        } finally {
+            setResendingMandate(null);
+        }
     }
 
     return (
@@ -608,7 +674,7 @@ const Riders = () => {
                                             </td>
                                             <td className="text-center py-2 lg:py-3 px-2 lg:px-4 border border-[#0000001A]">
                                                 <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleCheckStatus(rider._id)}
                                                         disabled={checkingStatus === rider._id}
                                                         className="text-xs lg:text-sm text-[#2BB048] hover:text-blue-800 disabled:opacity-50"
@@ -623,9 +689,9 @@ const Riders = () => {
                                                         )}
                                                     </button>
                                                     {rider.mandateStatus === 'active' && (
-                                                        <button 
-                                                            title='Cancel-mandate' 
-                                                            type='button' 
+                                                        <button
+                                                            title='Cancel-mandate'
+                                                            type='button'
                                                             onClick={() => handleCancelMandate(rider._id)}
                                                             disabled={cancellingMandate === rider._id}
                                                             className="text-xs lg:text-sm text-[#E51E25] hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -640,6 +706,25 @@ const Riders = () => {
                                                             )}
                                                         </button>
                                                     )}
+                                                    {(
+                                                        rider.mandateStatus === 'failed' || rider.mandateStatus === 'pending') && (
+                                                            <button
+                                                                title='resend mandate'
+                                                                type='button'
+                                                                onClick={() => handleResendMandate(rider._id)}
+                                                                className="text-xs lg:text-sm text-[#E51E25] hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                disabled={resendingMandate === rider._id}
+                                                            >
+                                                                {resendingMandate === rider._id ? (
+                                                                    <>
+                                                                        <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin inline mr-1" />
+                                                                        Resending...
+                                                                    </>
+                                                                ) : (
+                                                                    'Resend Mandate'
+                                                                )}
+                                                            </button>
+                                                        )}
                                                     <button
                                                         title='delete'
                                                         type='button'

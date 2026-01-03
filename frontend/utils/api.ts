@@ -70,6 +70,7 @@ export const API_ENDPOINTS = {
     MANDATE_STATUS: (id: string) => `${API_BASE_URL}/api/riders/${id}/mandate-status`,
     CHECK_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/check-mandate`,
     CANCEL_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/cancel-mandate`,
+    RESEND_MANDATE: (id: string) => `${API_BASE_URL}/api/riders/${id}/resend-mandate`,
     DOCUMENTS: (id: string) => `${API_BASE_URL}/api/riders/${id}/documents`,
     STATS: `${API_BASE_URL}/api/riders/stats/overview`,
     WEEKLY_PAYMENTS: `${API_BASE_URL}/api/riders/weekly-payments`,

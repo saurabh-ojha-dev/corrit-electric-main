@@ -858,6 +858,209 @@ router.post('/phonepe-subscription-setup', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/riders/:id/resend-mandate
+// @desc    Resend mandate link for a rider (creates new mandate with new merchantOrderId)
+// @access  Private
+router.post('/:id/resend-mandate', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid rider ID'
+      });
+    }
+
+    // Find the rider
+    const rider = await Rider.findById(id);
+
+    if (!rider) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found'
+      });
+    }
+
+    // Check if rider has UPI ID
+    if (!rider.upiId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rider does not have a UPI ID. Please update rider details first.'
+      });
+    }
+
+    // Check if rider has weekly rent amount
+    if (!rider.weeklyRentAmount || rider.weeklyRentAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rider does not have a valid weekly rent amount'
+      });
+    }
+
+    // Check PhonePe credentials - use same credentials as phonepe-auth endpoint
+    const clientId = 'SU2509161700329296269400';
+    const clientSecret = '6f68520b-d32f-4ef3-bbf7-b9fab1790970';
+    const clientVersion = 1;
+    const grantType = 'client_credentials';
+
+
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({
+        success: false,
+        message: 'PhonePe credentials not configured'
+      });
+    }
+
+    const axios = require('axios');
+
+    // Step 1: Get PhonePe access token
+    let authResponse;
+    try {
+      const authData = new URLSearchParams();
+      authData.append('client_id', clientId);
+      authData.append('client_version', clientVersion);
+      authData.append('client_secret', clientSecret);
+      authData.append('grant_type', grantType);
+
+      const authUrl = 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
+
+      authResponse = await axios.post(authUrl, authData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      if (!authResponse.data.access_token) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to get PhonePe access token'
+        });
+      }
+    } catch (authError) {
+      console.error('PhonePe authentication error:', authError.response?.data || authError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'PhonePe authentication failed',
+        error: authError.response?.data || authError.message
+      });
+    }
+
+    // Step 2: Generate new merchantOrderId and merchantSubscriptionId
+    const newMerchantOrderId = `MO${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newMerchantSubscriptionId = `MS${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Step 3: Prepare subscription data
+    const amountInPaise = Math.round(rider.weeklyRentAmount * 100);
+    const expireAt = Date.now() + (10 * 60 * 1000); // 10 minutes from now
+    const mandateExpireAt = Date.now() + (365 * 24 * 60 * 60 * 1000); // 1 year from now
+
+    const subscriptionData = {
+      merchantOrderId: newMerchantOrderId,
+      amount: amountInPaise,
+      expireAt: expireAt,
+      paymentFlow: {
+        type: "SUBSCRIPTION_SETUP",
+        merchantSubscriptionId: newMerchantSubscriptionId,
+        authWorkflowType: "TRANSACTION",
+        amountType: "FIXED",
+        maxAmount: amountInPaise,
+        frequency: "WEEKLY",
+        expireAt: mandateExpireAt,
+        paymentMode: {
+          type: "UPI_COLLECT",
+          details: {
+            type: "VPA",
+            vpa: rider.upiId.trim()
+          }
+        }
+      }
+    };
+
+    // Step 4: Call PhonePe Subscription Setup API
+    try {
+      const subscriptionUrl = 'https://api.phonepe.com/apis/pg/subscriptions/v2/setup';
+
+      const subscriptionResponse = await axios.post(
+        subscriptionUrl,
+        subscriptionData,
+        {
+          headers: {
+            'Authorization': `O-Bearer ${authResponse.data.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Step 5: Update rider with new mandate details
+      await Rider.findByIdAndUpdate(id, {
+        mandateStatus: subscriptionResponse.data.state === 'PENDING' ? 'pending' : subscriptionResponse.data.state.toLowerCase(),
+        merchantOrderId: newMerchantOrderId,
+        'mandateDetails.merchantOrderId': newMerchantOrderId,
+        'mandateDetails.merchantSubscriptionId': newMerchantSubscriptionId,
+        'mandateDetails.amount': amountInPaise,
+        'mandateDetails.maxAmount': amountInPaise,
+        'mandateDetails.frequency': 'weekly',
+        'mandateDetails.authWorkflowType': 'TRANSACTION',
+        'mandateDetails.amountType': 'FIXED',
+        'mandateDetails.resentAt': new Date(),
+        'mandateDetails.previousMerchantOrderId': rider.merchantOrderId || rider.mandateDetails?.merchantOrderId
+      });
+
+      // Step 6: Create notification
+      await Notification.create({
+        type: 'mandate_resent',
+        title: `Mandate Link Resent – ${rider.riderId}`,
+        description: `New mandate link generated. Previous mandate link expired or failed. Please approve the new mandate.`,
+        riderId: rider._id,
+        priority: 'medium',
+        actionRequired: true,
+        metadata: {
+          riderName: rider.name,
+          riderId: rider.riderId,
+          newMerchantOrderId: newMerchantOrderId,
+          previousMerchantOrderId: rider.merchantOrderId || rider.mandateDetails?.merchantOrderId,
+          resentAt: new Date(),
+          resentBy: req.admin._id
+        }
+      });
+
+      // Step 7: Extract redirect URL from PhonePe response (handle multiple possible formats)
+      const redirectUrl = subscriptionResponse.data?.data?.redirectUrl || 
+                         subscriptionResponse.data?.redirectUrl ||
+                         subscriptionResponse.data?.data?.instrumentResponse?.redirectInfo?.url ||
+                         subscriptionResponse.data?.instrumentResponse?.redirectInfo?.url;
+
+      // Step 8: Return response with redirect URL
+      res.json({
+        success: true,
+        message: 'New mandate link generated successfully',
+        merchantOrderId: newMerchantOrderId,
+        merchantSubscriptionId: newMerchantSubscriptionId,
+        orderId: subscriptionResponse.data.orderId,
+        state: subscriptionResponse.data.state,
+        redirectUrl: redirectUrl,
+        phonepeResponse: subscriptionResponse.data
+      });
+
+    } catch (subscriptionError) {
+      console.error('PhonePe subscription setup error:', subscriptionError.response?.data || subscriptionError.message);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create new mandate with PhonePe',
+        error: subscriptionError.response?.data || subscriptionError.message
+      });
+    }
+
+  } catch (error) {
+    console.error('Error resending mandate:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error: ' + error.message
+    });
+  }
+});
+
 module.exports = router;
-
-
