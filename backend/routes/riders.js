@@ -492,11 +492,11 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
       });
     }
 
-    // Check if PhonePe credentials are configured (try both naming conventions)
-    const clientId = process.env.PHONEPE_CLIENT_ID || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_ID;
-    const clientSecret = process.env.PHONEPE_CLIENT_SECRET || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_SECRET;
-    const clientVersion = process.env.PHONEPE_CLIENT_VERSION || process.env.NEXT_PUBLIC_PHONEPE_CLIENT_VERSION || '1.0';
-    const grantType = process.env.PHONEPE_GRANT_TYPE || process.env.NEXT_PUBLIC_PHONEPE_GRANT_TYPE || 'client_credentials';
+    // Check PhonePe credentials - use same credentials as phonepe-auth endpoint
+    const clientId = 'SU2509161700329296269400';
+    const clientSecret = '6f68520b-d32f-4ef3-bbf7-b9fab1790970';
+    const clientVersion = 1;
+    const grantType = 'client_credentials';
 
     if (!clientId || !clientSecret) {
 
@@ -542,7 +542,9 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
       authData.append('client_secret', clientSecret);
       authData.append('grant_type', grantType);
 
-      authResponse = await axios.post(process.env.PHONEPE_AUTH_URL || 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token', authData, {
+      const authUrl = 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
+
+      authResponse = await axios.post(authUrl, authData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -576,12 +578,9 @@ router.post('/:id/cancel-mandate', auth, async (req, res) => {
     }
 
     // Cancel subscription using PhonePe API
-    const phonepeBaseUrl = process.env.NODE_ENV === 'development'
-      ? 'https://api-preprod.phonepe.com/apis/pg-sandbox'
-      : 'https://api.phonepe.com/apis/pg';
+    const phonepeBaseUrl = 'https://api.phonepe.com/apis/pg';
 
     try {
-
       const cancelResponse = await axios.post(
         `${phonepeBaseUrl}/subscriptions/v2/${rider.mandateDetails.merchantSubscriptionId}/cancel`,
         {},
